@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   addBlock,
   createDocument,
@@ -6,14 +6,11 @@ import {
   createTextBlock,
   type FlowDocument,
 } from "@tabflow/domain";
-import { MemoryBlobStore } from "./adapters/MemoryBlobStore";
-import { LocalStorageDocumentStore } from "./adapters/LocalStorageDocumentStore";
-import { MockSnapshotRenderer } from "./adapters/MockSnapshotRenderer";
-import { BrowserTabController } from "./adapters/BrowserTabController";
 import { ServicesProvider, type AppServices } from "./state/services";
 import { useDocument } from "./state/useDocument";
 import { FlowView } from "./ui/FlowView";
 import { systemClock, uuidIds } from "./lib/env";
+import type { AppRuntime } from "./runtime";
 
 function demoDocument(): FlowDocument {
   const deps = { ids: uuidIds, clock: systemClock };
@@ -54,50 +51,35 @@ function demoDocument(): FlowDocument {
   return doc;
 }
 
-export default function App() {
-  const services = useMemo(() => {
-    const blobs = new MemoryBlobStore();
-    return {
-      blobs,
-      renderer: new MockSnapshotRenderer(blobs),
-      tabs: new BrowserTabController(),
-      store: new LocalStorageDocumentStore(),
-    };
-  }, []);
-
+/** App tar en injicerad runtime (dev/Spår A/Spår B). Ingen hårdkodad adapter här. */
+export default function App({ runtime }: { runtime: AppRuntime }) {
   const [initial, setInitial] = useState<FlowDocument | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const list = await services.store.list();
-      const loaded = list[0] ? await services.store.load(list[0].id) : null;
+      const list = await runtime.store.list();
+      const loaded = list[0] ? await runtime.store.load(list[0].id) : null;
       const doc = loaded ?? demoDocument();
-      if (!loaded) await services.store.save(doc);
+      if (!loaded) await runtime.store.save(doc);
       if (!cancelled) setInitial(doc);
     })();
     return () => {
       cancelled = true;
     };
-  }, [services]);
+  }, [runtime]);
 
   if (!initial) return <div className="loading">Laddar…</div>;
-  return <Workspace initial={initial} services={services} />;
+  return <Workspace initial={initial} runtime={runtime} />;
 }
 
-function Workspace({
-  initial,
-  services,
-}: {
-  initial: FlowDocument;
-  services: { blobs: MemoryBlobStore; renderer: MockSnapshotRenderer; tabs: BrowserTabController; store: LocalStorageDocumentStore };
-}) {
-  const { doc, actions } = useDocument(initial, services.store);
+function Workspace({ initial, runtime }: { initial: FlowDocument; runtime: AppRuntime }) {
+  const { doc, actions } = useDocument(initial, runtime.store);
   const ctx: AppServices = {
     actions,
-    renderer: services.renderer,
-    blobs: services.blobs,
-    tabs: services.tabs,
+    renderer: runtime.renderer,
+    blobs: runtime.blobs,
+    tabs: runtime.tabs,
   };
 
   return (

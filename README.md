@@ -14,7 +14,9 @@ Detta repo är i **riskupptäckts-/spikefasen** (mindcamp-project-spike). Ingen 
 | **M0** — spårsagnostisk domänkärna | ✅ 22 tester gröna, typecheck ren | [`domain/`](domain/) |
 | **Portar** `SidblockRenderer` m.fl. | ✅ Frysta, informerade av spiken | [`app/src/ports/`](app/src/ports/index.ts) |
 | **M1** — UI-skal: virtualiserat flöde, textblock, blockoperationer, mock-snapshot | ✅ Bygger rent, renderar (skärmbild) | [`app/`](app/README.md) |
-| M2 Spår A / M3 / M4 Spår B / M5 | ⏭ Planerat | — |
+| **M2 Spår A** — Chrome MV3-tillägg: fångst, dubbel artefakt, IndexedDB | ✅ Bygger rent; capture testas manuellt i Chrome | [`extension/`](extension/README.md) |
+| **Text-HTML-extraktion** (F-SNAP-3) + IndexedDB-blobstore | ✅ 12 tester gröna | [`app/src/lib/`](app/src/lib/extractReadable.ts) |
+| M3 / M4 Spår B / M5 | ⏭ Planerat | — |
 
 ## Spike E1 — resultat i en mening
 

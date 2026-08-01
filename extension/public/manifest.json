@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "TabFlow",
+  "version": "0.1.0",
+  "description": "Scroll-baserad tab-notebook: anteckningar varvat med fångade webbsidor i ett vertikalt flöde.",
+  "action": {
+    "default_title": "Öppna TabFlow"
+  },
+  "background": {
+    "service_worker": "sw.js",
+    "type": "module"
+  },
+  "permissions": ["tabs", "storage", "activeTab", "scripting", "contextMenus"],
+  "minimum_chrome_version": "116"
+}
