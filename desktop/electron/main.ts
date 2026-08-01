@@ -21,6 +21,10 @@ import {
 } from "./storage";
 import { ViewManager, type SyncItem } from "./views";
 
+// Namnet styr var userData hamnar. Sätts explicit så att en körning från källkod
+// och en installerad TabFlow delar samma dokument och blobbar.
+app.setName("TabFlow");
+
 let win: BrowserWindow | null = null;
 let views: ViewManager | null = null;
 

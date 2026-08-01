@@ -1,0 +1,81 @@
+name: Release
+
+# Bygger skrivbordsappen på riktiga macOS- och Linux-maskiner och lägger
+# paketen på GitHub-releasen. Korsbygge från macOS duger inte hela vägen:
+# .deb kräver fpm, som bara finns på Linux — ett sådant bygge blir en tom fil.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tagg att bygga och ladda upp till (t.ex. v0.1.0)"
+        required: true
+
+jobs:
+  build:
+    name: Bygg ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            label: macOS
+            script: dist:mac
+          - os: ubuntu-latest
+            label: Linux
+            script: dist:linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Installera beroenden
+        working-directory: desktop
+        run: npm ci
+
+      - name: Paketera
+        working-directory: desktop
+        run: npm run ${{ matrix.script }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tabflow-${{ matrix.label }}
+          if-no-files-found: error
+          path: |
+            desktop/release/*.dmg
+            desktop/release/*.zip
+            desktop/release/*.AppImage
+            desktop/release/*.deb
+
+  release:
+    name: Publicera
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Lägg paketen på releasen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          ls -lh artifacts
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "TabFlow $TAG" --notes "Bygge från $GITHUB_SHA."
+          fi
+          gh release upload "$TAG" artifacts/* --clobber

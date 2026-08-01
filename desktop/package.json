@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "description": "TabFlow Spår B — Electron-app med levande WebContentsView per sidblock (M4).",
+  "author": "Jakob Wärnhjelm <jakob@warnhjelm.se>",
+  "homepage": "https://github.com/jakobwarnhjelm/web-conversation-research",
   "main": "dist/electron/main.js",
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -10,7 +12,33 @@
     "build:renderer": "vite build",
     "build:electron": "tsc -p tsconfig.electron.json",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.electron.json --noEmit",
-    "start": "npm run build && electron ."
+    "start": "npm run build && electron .",
+    "dist:mac": "npm run build && electron-builder --mac --publish never",
+    "dist:linux": "npm run build && electron-builder --linux --publish never"
+  },
+  "build": {
+    "appId": "se.mindcamp.tabflow",
+    "productName": "TabFlow",
+    "directories": { "output": "release", "buildResources": "build" },
+    "files": ["dist/**/*", "package.json"],
+    "artifactName": "TabFlow-${version}-${os}-${arch}.${ext}",
+    "npmRebuild": false,
+    "mac": {
+      "category": "public.app-category.productivity",
+      "identity": null,
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] },
+        { "target": "zip", "arch": ["arm64", "x64"] }
+      ]
+    },
+    "linux": {
+      "category": "Office",
+      "maintainer": "Jakob Wärnhjelm <jakob@warnhjelm.se>",
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] },
+        { "target": "deb", "arch": ["x64"] }
+      ]
+    }
   },
   "dependencies": {
     "@tanstack/react-virtual": "^3.10.8",
@@ -25,6 +53,7 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
     "electron": "^32.2.0",
+    "electron-builder": "^25.1.8",
     "typescript": "^5.6.3",
     "vite": "^5.4.10"
   }
