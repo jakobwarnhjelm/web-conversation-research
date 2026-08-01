@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <title>Spike E1 — WebContentsView i virtualiserat flöde</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #0e1116; color: #e6edf3;
+        font: 14px/1.4 system-ui, sans-serif; }
+
+      header {
+        position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 10;
+        display: flex; align-items: center; gap: 16px; padding: 0 16px;
+        background: #161b22; border-bottom: 1px solid #30363d;
+      }
+      header h1 { font-size: 14px; margin: 0; font-weight: 600; }
+      header .hud { margin-left: auto; font-variant-numeric: tabular-nums; color: #9da7b3; }
+      header .hud b { color: #58a6ff; }
+
+      /* Scroll-containern börjar under headern och fyller resten av fönstret. */
+      #scroller { position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; }
+      #content { position: relative; width: 100%; }
+
+      .block { position: absolute; left: 0; right: 0; padding: 0 24px; }
+      .inner { height: 100%; border-radius: 10px; overflow: hidden;
+        border: 1px solid #30363d; position: relative; }
+
+      .text-block .inner { background: #1c2333; padding: 16px 20px; }
+      .text-block h2 { margin: 0 0 6px; font-size: 15px; color: #7ee787; }
+      .text-block p { margin: 0; color: #adbac7; }
+
+      .page-block .inner { background: #11151c; display: flex; flex-direction: column; }
+      .page-head { height: 30px; flex: 0 0 30px; display: flex; align-items: center; gap: 8px;
+        padding: 0 10px; background: #1b2230; border-bottom: 1px solid #30363d;
+        font-size: 12px; color: #adbac7; }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: #f0883e; }
+      /* Här ska den native WebContentsView:en hamna. Vi mäter denna rutas rect. */
+      .webview-slot { flex: 1 1 auto; position: relative; background:
+        repeating-linear-gradient(45deg, #161b22, #161b22 10px, #1a2028 10px, #1a2028 20px); }
+      .slot-hint { position: absolute; inset: 0; display: flex; align-items: center;
+        justify-content: center; color: #6e7681; font-size: 12px; text-align: center; }
+
+      /* KRITISKT TEST: denna DOM-verktygsrad SKA ligga ovanpå webviewen (F-BLK-6/F-UX-3). */
+      .block-toolbar {
+        position: absolute; top: 8px; right: 8px; z-index: 9999;
+        display: flex; gap: 6px; padding: 6px 10px; border-radius: 8px;
+        background: #f778ba; color: #14060f; font-weight: 700; font-size: 12px;
+        box-shadow: 0 4px 14px rgba(0,0,0,.5);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Spike E1 · WebContentsView × virtualisering</h1>
+      <div class="hud" id="hud">live: <b>–</b> · processer: <b>–</b></div>
+    </header>
+    <div id="scroller"><div id="content"></div></div>
+    <script src="./renderer.js"></script>
+  </body>
+</html>

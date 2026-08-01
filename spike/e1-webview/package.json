@@ -1,0 +1,14 @@
+{
+  "name": "spike-e1-webview",
+  "version": "0.0.0",
+  "private": true,
+  "description": "THROWAWAY spike: WebContentsView i virtualiserat scrollflöde. Se README.md.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:xvfb": "xvfb-run -a -s '-screen 0 1200x900x24' electron . --no-sandbox"
+  },
+  "devDependencies": {
+    "electron": "^32.2.0"
+  }
+}
