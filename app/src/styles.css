@@ -119,6 +119,42 @@ body {
   border-radius: 6px; padding: 3px 10px; font-size: 12px; cursor: pointer;
 }
 
+/* Felmeddelande på ett block (t.ex. misslyckad fångst) */
+.block-error {
+  display: flex; align-items: center; gap: 10px; font-size: 12px;
+  color: #ffb4a8; background: #3d1d1a; border-top: 1px solid #5c2b26; padding: 7px 12px;
+}
+.block-error button {
+  margin-left: auto; background: none; border: 0; color: inherit; cursor: pointer; font-size: 13px;
+}
+
+/* Textvy av hela notebooken (markdown-snuttar + URL-rader) */
+.mode-toggle {
+  margin-left: auto;
+  background: var(--panel-2); color: var(--muted); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 12px; font-size: 12px; cursor: pointer;
+}
+.mode-toggle:hover { color: var(--text); }
+.app-header .doc-meta { margin-left: 0; }
+.mode-toggle.on { color: var(--text); border-color: var(--accent); }
+.source-editor { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.source-bar {
+  display: flex; align-items: center; gap: 16px; padding: 10px 16px;
+  border-bottom: 1px solid var(--border); background: var(--panel);
+}
+.source-hint { color: var(--muted); font-size: 12px; flex: 1; }
+.source-actions { display: flex; gap: 8px; }
+.source-actions button {
+  background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 5px 14px; font-size: 12px; cursor: pointer;
+}
+.source-actions button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.source-text {
+  flex: 1; min-height: 0; width: 100%; resize: none; border: 0; outline: none;
+  background: var(--bg); color: var(--text); padding: 20px 24px;
+  font: 14px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 /* URL-inmatning för "+ Sida". Ersätter window.prompt, som Electron inte har. */
 .add-page-form { display: flex; gap: 6px; align-items: center; }
 .add-page-form input {

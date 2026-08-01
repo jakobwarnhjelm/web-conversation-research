@@ -13,11 +13,13 @@
 import { BrowserWindow, WebContents, WebContentsView } from "electron";
 import { GRAB_READABLE_EXPR } from "./readable";
 import { GUEST_PARTITION, GUEST_USER_AGENT } from "./guest";
-import { putBlob } from "./storage";
+import { putBlob, reserveBlobRef } from "./storage";
 
 export interface CaptureResult {
   imageRef: string;
   textHtmlRef: string;
+  /** Helsidearkiv (MHTML) med inline:ade resurser, F-SNAP-9. null om det misslyckades. */
+  singleFileRef: string | null;
   title: string;
   capturedAt: string;
   fullPage: boolean;
@@ -52,10 +54,38 @@ async function extract(wc: WebContents, fallbackUrl: string): Promise<Extracted>
   }
 }
 
-async function store(png: Buffer, ex: Extracted, fullPage: boolean): Promise<CaptureResult> {
+/**
+ * Helsidearkiv (F-SNAP-9). Chromiums egen MHTML-serialisering packar HTML, CSS,
+ * bilder och typsnitt i EN fil — samma idé som SingleFile, men inbyggd. Det är
+ * det enda av de tre artefakterna som bevarar sidan som den faktiskt såg ut.
+ */
+async function archive(wc: WebContents): Promise<string | null> {
+  try {
+    const { ref, path } = reserveBlobRef("multipart/related");
+    await wc.savePage(path, "MHTML");
+    return ref;
+  } catch (e) {
+    console.error("[tabflow] MHTML-arkivering misslyckades", (e as Error).message);
+    return null;
+  }
+}
+
+async function store(
+  png: Buffer,
+  ex: Extracted,
+  singleFileRef: string | null,
+  fullPage: boolean,
+): Promise<CaptureResult> {
   const imageRef = await putBlob(png, "image/png");
   const textHtmlRef = await putBlob(Buffer.from(ex.textHtml, "utf8"), "text/html");
-  return { imageRef, textHtmlRef, title: ex.title, capturedAt: new Date().toISOString(), fullPage };
+  return {
+    imageRef,
+    textHtmlRef,
+    singleFileRef,
+    title: ex.title,
+    capturedAt: new Date().toISOString(),
+    fullPage,
+  };
 }
 
 /** Fånga en vy som redan visas i flödet. */
@@ -63,7 +93,8 @@ export async function captureLiveView(view: WebContentsView, url: string): Promi
   const wc = view.webContents;
   const image = await wc.capturePage();
   const ex = await extract(wc, url);
-  return await store(image.toPNG(), ex, false);
+  const single = await archive(wc);
+  return await store(image.toPNG(), ex, single, false);
 }
 
 /** Ladda en URL i ett dolt fönster och fånga hela sidhöjden. */
@@ -100,7 +131,8 @@ export async function captureUrlOffscreen(url: string): Promise<CaptureResult> {
 
     const image = await win.webContents.capturePage();
     const ex = await extract(win.webContents, url);
-    return await store(image.toPNG(), ex, fullPage);
+    const single = await archive(win.webContents);
+    return await store(image.toPNG(), ex, single, fullPage);
   } finally {
     if (!win.isDestroyed()) win.destroy();
   }

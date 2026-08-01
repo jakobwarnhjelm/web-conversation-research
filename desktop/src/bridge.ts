@@ -26,6 +26,7 @@ export interface SyncResult {
 export interface CaptureResult {
   imageRef: string;
   textHtmlRef: string;
+  singleFileRef: string | null;
   title: string;
   capturedAt: string;
   fullPage: boolean;
@@ -47,6 +48,8 @@ export interface TabflowBridge {
     put(bytes: Uint8Array, mime: string): Promise<string>;
     get(ref: string): Promise<{ bytes: Uint8Array; mime: string } | null>;
     delete(ref: string): Promise<void>;
+    open(ref: string): Promise<void>;
+    reveal(ref: string): Promise<void>;
   };
   openExternal(url: string): Promise<void>;
 }

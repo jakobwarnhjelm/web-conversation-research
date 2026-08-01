@@ -8,6 +8,7 @@ import path from "node:path";
 import { captureLiveView, captureUrlOffscreen, type CaptureResult } from "./capture";
 import { GUEST_PARTITION, GUEST_USER_AGENT } from "./guest";
 import {
+  blobFilePath,
   deleteBlob,
   deleteDocument,
   getBlob,
@@ -93,6 +94,16 @@ function registerIpc(): void {
   );
   ipcMain.handle("tabflow:blobs:get", (_e, ref: string) => getBlob(ref));
   ipcMain.handle("tabflow:blobs:delete", (_e, ref: string) => deleteBlob(ref));
+
+  // Snapshot-artefakterna är riktiga filer. "Öppna" lämnar dem till systemet
+  // (text-HTML i webbläsaren, PNG i bildvisaren); "visa" pekar ut dem i Finder.
+  ipcMain.handle("tabflow:blobs:open", async (_e, ref: string) => {
+    const err = await shell.openPath(blobFilePath(ref));
+    if (err) throw new Error(err);
+  });
+  ipcMain.handle("tabflow:blobs:reveal", (_e, ref: string) => {
+    shell.showItemInFolder(blobFilePath(ref));
+  });
 
   ipcMain.handle("tabflow:shell:open", (_e, url: string) => {
     if (/^https?:/i.test(url)) void shell.openExternal(url);

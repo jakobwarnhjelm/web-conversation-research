@@ -39,6 +39,27 @@ npm test        # 22 tester
 npm run typecheck
 ```
 
+## Webbdemo — att dela med andra
+
+`app/` bygger till **en enda HTML-fil** utan server, konto eller inloggning. Dokumentet
+ligger i localStorage och bilder i IndexedDB, så allt stannar i besökarens webbläsare.
+
+```bash
+cd app && npm run build:single    # dist/tabflow-single.html — öppna eller lägg var som helst
+```
+
+Begränsningen är ärlig och oundviklig: en webbläsare får inte bädda in främmande sidor,
+så sidblock visas som länkkort och 📷 sparar en platshållarkopia. Levande sidor finns
+bara i Electron-versionen.
+
+## Textvyn — notebooken som råtext
+
+Knappen **Text** i huvudet visar hela dokumentet som markdown-snuttar varvat med
+URL-rader. En rad som bara innehåller en URL blir ett sidblock; allt annat blir text.
+Sidblock återanvänds per URL vid sparning, så snapshots överlever en omskrivning.
+Det gör dokumentet klistrbart — skriv anteckningar och länkar var som helst och klistra
+in alltihop.
+
 ## M4 — Spår B (Electron)
 
 Den enda varianten där sidorna är **riktiga, levande webbläsarfönster**. Samma domänkärna,

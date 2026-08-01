@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeUrl } from "../src/ui/AddPageButton";
+import { normalizeUrl } from "../src/lib/url";
 
 describe("normalizeUrl", () => {
   it("lägger till https:// när schemat saknas", () => {

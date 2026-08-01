@@ -23,6 +23,7 @@ const EXT_BY_MIME: Record<string, string> = {
   "image/webp": "webp",
   "text/html": "html",
   "application/json": "json",
+  "multipart/related": "mhtml",
 };
 const MIME_BY_EXT: Record<string, string> = {
   png: "image/png",
@@ -30,6 +31,7 @@ const MIME_BY_EXT: Record<string, string> = {
   webp: "image/webp",
   html: "text/html",
   json: "application/json",
+  mhtml: "multipart/related",
 };
 
 function root(): string {
@@ -51,6 +53,21 @@ export async function initStorage(): Promise<void> {
 function blobPath(ref: string): string {
   if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9]+$/.test(ref)) throw new Error(`Ogiltig blobreferens: ${ref}`);
   return path.join(blobDir(), ref);
+}
+
+/** Sökvägen till en blob på disk, för "öppna" och "visa i Finder". */
+export function blobFilePath(ref: string): string {
+  return blobPath(ref);
+}
+
+/**
+ * Reservera en referens och dess sökväg utan att skriva något. Behövs för
+ * `webContents.savePage()`, som skriver filen själv och vill ha en målsökväg.
+ */
+export function reserveBlobRef(mime: string): { ref: string; path: string } {
+  const ext = EXT_BY_MIME[mime] ?? "bin";
+  const ref = `${randomUUID()}.${ext}`;
+  return { ref, path: blobPath(ref) };
 }
 
 export async function putBlob(bytes: Uint8Array, mime: string): Promise<string> {

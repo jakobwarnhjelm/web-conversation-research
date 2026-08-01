@@ -64,8 +64,21 @@ Ingen flik behöver bli aktiv, inget flimmer, ingen host-behörighet. Det som bl
 batch-snapshot i Spår A är helt enkelt inte ett problem i Electron, vilket gör
 F-SNAPWF byggbart här utan ny spike.
 
-Båda vägarna producerar dubbel artefakt: PNG + avskalad text-HTML via
-`electron/readable.ts`, som körs inne i sidan med `executeJavaScript`.
+Varje fångst ger **tre** artefakter:
+
+| Artefakt | Vad det är | Var |
+|---|---|---|
+| PNG | grafisk kopia av sidan | `imageRef` |
+| Text-HTML | avskalad läsversion, ingen stil eller skript | `textHtmlRef` |
+| MHTML | **hela sidan** med HTML, CSS, bilder och typsnitt i en fil | `singleFileRef` |
+
+MHTML-arkivet (F-SNAP-9) är Chromiums egen serialisering via `webContents.savePage()`
+— samma idé som SingleFile, men inbyggd. Det är den enda artefakten som bevarar sidan
+som den faktiskt såg ut; text-HTML:en är läsbar men avskalad.
+
+Alla tre nås från remsan längst ned i ett snapshot-block: **Visa textversion**,
+**Öppna arkiv (hela sidan)** och **Visa i Finder**. Filerna ligger i
+`~/Library/Application Support/@tabflow/desktop/tabflow/blobs`.
 
 ## Säkerhet (avsnitt 9)
 
@@ -88,7 +101,7 @@ Kört mot en ren lagring och driven över CDP:
 ## Inte i M4 (nästa)
 
 Batch-"Snapshot: alla" (F-SNAPWF), dokumentlista för flera dokument (F-DOK-3), sök
-(F-NAV), export/import-UI, SingleFile-artefakt (F-SNAP-9), drag-and-drop.
+(F-NAV), export/import-UI, drag-and-drop.
 
 **Öppen fråga som kräver din maskin:** subjektiv scroll-fps (F-PERF-1) med flera tunga
 sajter samtidigt. Det gick inte att döma programmatiskt — scrolla snabbt och känn efter.

@@ -8,6 +8,7 @@ import {
   moveBlockBy,
   removeBlock,
   renameDocument,
+  replaceBlocks,
   setCollapsed,
   setPageDisplay,
   setPageHeight,
@@ -21,6 +22,7 @@ import {
 } from "@tabflow/domain";
 import type { DocumentStore } from "../ports";
 import { systemClock, uuidIds } from "../lib/env";
+import { textToBlocks } from "../lib/notebookText";
 
 const deps = { ids: uuidIds, clock: systemClock };
 
@@ -37,6 +39,8 @@ export interface DocumentActions {
   setDisplay(blockId: string, display: RenderDisplay): void;
   applySnapshot(blockId: string, artifact: SnapshotArtifact): void;
   rename(title: string): void;
+  /** Skriv om hela dokumentet från textvyn (markdown-snuttar + URL-rader). */
+  replaceFromText(text: string): void;
 }
 
 /**
@@ -77,6 +81,10 @@ export function useDocument(
       setDisplay: (id, display) => setDoc((d) => setPageDisplay(d, id, display, deps)),
       applySnapshot: (id, art) => setDoc((d) => attachSnapshot(d, id, art, deps)),
       rename: (title) => setDoc((d) => renameDocument(d, title, deps)),
+      replaceFromText: (text) =>
+        setDoc((d) =>
+          replaceBlocks(d, textToBlocks(text, d.blocks, deps, { pageMode }), deps),
+        ),
     }),
     [pageMode],
   );

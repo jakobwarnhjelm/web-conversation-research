@@ -9,6 +9,7 @@ import {
 import { ServicesProvider, type AppServices } from "./state/services";
 import { useDocument } from "./state/useDocument";
 import { FlowView } from "./ui/FlowView";
+import { SourceEditor } from "./ui/SourceEditor";
 import { systemClock, uuidIds } from "./lib/env";
 import type { AppRuntime } from "./runtime";
 
@@ -77,6 +78,7 @@ function Workspace({ initial, runtime }: { initial: FlowDocument; runtime: AppRu
   const { doc, actions } = useDocument(initial, runtime.store, {
     defaultPageMode: runtime.defaultPageMode,
   });
+  const [sourceMode, setSourceMode] = useState(false);
   const ctx: AppServices = {
     actions,
     renderer: runtime.renderer,
@@ -94,9 +96,20 @@ function Workspace({ initial, runtime }: { initial: FlowDocument; runtime: AppRu
           onChange={(e) => actions.rename(e.target.value)}
           aria-label="Dokumentets titel"
         />
+        <button
+          className={"mode-toggle" + (sourceMode ? " on" : "")}
+          onClick={() => setSourceMode((v) => !v)}
+          title="Redigera hela notebooken som text"
+        >
+          {sourceMode ? "Flöde" : "Text"}
+        </button>
         <div className="doc-meta">{doc.blocks.length} block</div>
       </header>
-      <FlowView doc={doc} />
+      {sourceMode ? (
+        <SourceEditor doc={doc} onClose={() => setSourceMode(false)} />
+      ) : (
+        <FlowView doc={doc} />
+      )}
     </ServicesProvider>
   );
 }

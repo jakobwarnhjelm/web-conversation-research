@@ -167,7 +167,7 @@ class WebviewHandle implements SidblockHandle {
     return {
       imageRef: r.imageRef,
       textHtmlRef: r.textHtmlRef,
-      singleFileRef: null,
+      singleFileRef: r.singleFileRef,
       fullPage: r.fullPage,
       capturedAt: r.capturedAt,
     };
@@ -193,6 +193,19 @@ class WebviewHandle implements SidblockHandle {
       live: this.wantsLive(),
       getContentRect: () => this.host.getContentRect(),
       getClipRect: () => this.host.getClipRect(),
+    });
+  }
+
+  private wireArtifactBar(textHtmlRef: string, singleFileRef: string | null): void {
+    const open = (ref: string) => () => {
+      void bridge().blobs.open(ref).catch((e) => console.error("[tabflow] kunde inte öppna", e));
+    };
+    this.el.querySelector(".tf-text")?.addEventListener("click", open(textHtmlRef));
+    if (singleFileRef) {
+      this.el.querySelector(".tf-archive")?.addEventListener("click", open(singleFileRef));
+    }
+    this.el.querySelector(".tf-reveal")?.addEventListener("click", () => {
+      void bridge().blobs.reveal(singleFileRef ?? textHtmlRef);
     });
   }
 
@@ -233,13 +246,35 @@ class WebviewHandle implements SidblockHandle {
           ? "width:100%;height:auto"
           : "width:100%;height:100%;object-fit:cover;object-position:top";
         this.el.style.overflow = snap.fullPage ? "auto" : "hidden";
-        this.el.innerHTML = `<img src="${url}" alt="Snapshot av ${escapeHtml(this.block.title)}" style="display:block;${fit}" />`;
+        this.el.innerHTML =
+          `<img src="${url}" alt="Snapshot av ${escapeHtml(this.block.title)}" style="display:block;${fit}" />` +
+          artifactBar(snap.singleFileRef !== null);
+        this.wireArtifactBar(snap.textHtmlRef, snap.singleFileRef);
         return;
       }
     }
 
     this.el.innerHTML = ph("Ingen snapshot än — klicka 📷 i huvudet", this.block.url);
   }
+}
+
+/**
+ * Snapshotens tre artefakter är riktiga filer på disk. Utan den här remsan går de
+ * inte att komma åt från appen — bilden syns, men textversionen och arkivet vore
+ * osynliga trots att de fångades.
+ */
+function artifactBar(hasArchive: boolean): string {
+  const btn = (cls: string, text: string) =>
+    `<button class="${cls}" style="background:#161b22;color:#e6edf3;border:1px solid #2a3038;` +
+    `border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer">${text}</button>`;
+  return (
+    `<div class="tf-artifacts" style="position:sticky;bottom:0;display:flex;gap:6px;` +
+    `padding:8px;background:linear-gradient(transparent,#0d1117cc 40%)">` +
+    btn("tf-text", "Visa textversion") +
+    (hasArchive ? btn("tf-archive", "Öppna arkiv (hela sidan)") : "") +
+    btn("tf-reveal", "Visa i Finder") +
+    `</div>`
+  );
 }
 
 function ph(msg: string, url: string): string {

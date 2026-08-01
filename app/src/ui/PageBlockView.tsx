@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   HEIGHT_STEP_PX,
   type BlockHeightStep,
@@ -31,6 +31,8 @@ export function PageBlockView({
   const { actions, renderer, tabs } = useServices();
   const contentRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<SidblockHandle | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Skapa/förstör renderar-handtaget en gång per block-id.
   useEffect(() => {
@@ -86,12 +88,22 @@ export function PageBlockView({
   const snap = block.render.snapshot;
   const isLive = block.render.display === "live";
 
+  // Fångst kan misslyckas i alla spår — nekad sida, nätverksfel, stängd vy. Felet
+  // hör hemma på blocket det gäller, inte i konsolen.
   async function doSnapshot() {
     const handle = handleRef.current;
-    if (!handle) return;
-    const artifact = await handle.snapshot();
-    actions.applySnapshot(block.id, artifact);
-    actions.setDisplay(block.id, "snapshot");
+    if (!handle || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const artifact = await handle.snapshot();
+      actions.applySnapshot(block.id, artifact);
+      actions.setDisplay(block.id, "snapshot");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -132,8 +144,8 @@ export function PageBlockView({
               {isLive ? "▣" : "▶"}
             </button>
           )}
-          <button title="Skapa snapshot" onClick={doSnapshot}>
-            📷
+          <button title="Skapa snapshot" onClick={doSnapshot} disabled={busy}>
+            {busy ? "…" : "📷"}
           </button>
           <button title="Öppna som flik" onClick={() => tabs.open(block.url)}>
             ↗
@@ -141,6 +153,13 @@ export function PageBlockView({
         </div>
         <BlockChrome block={block} isFirst={isFirst} isLast={isLast} />
       </div>
+
+      {error && (
+        <div className="block-error" role="alert">
+          Snapshot misslyckades: {error}
+          <button onClick={() => setError(null)}>✕</button>
+        </div>
+      )}
 
       {!block.collapsed && (
         <div

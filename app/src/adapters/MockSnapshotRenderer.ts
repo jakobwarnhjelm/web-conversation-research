@@ -120,7 +120,7 @@ class MockHandle implements SidblockHandle {
         return;
       }
     }
-    this.el.innerHTML = placeholder("Ingen snapshot än — klicka 📷 i huvudet", this.block);
+    this.el.innerHTML = placeholder("↗ öppnar sidan · 📷 sparar en kopia", this.block);
   }
 
   private async renderCanvasBlob(capturedAt: string): Promise<Blob> {
@@ -158,13 +158,26 @@ class MockHandle implements SidblockHandle {
   }
 }
 
+/**
+ * Länkkort. En webbläsare kan inte bädda in främmande sidor (X-Frame-Options och
+ * avsnitt 10.3), så ett sidblock utan snapshot visar vad det faktiskt är: en
+ * referens man kan öppna. Ärligare än en tom ruta, och användbart i sig.
+ */
 function placeholder(msg: string, block: PageBlock): string {
+  let host = block.url;
+  try {
+    host = new URL(block.url).hostname.replace(/^www\./, "");
+  } catch {
+    /* behåll råtexten */
+  }
   return (
-    `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;` +
-    `flex-direction:column;gap:6px;color:#6e7681;text-align:center;padding:16px;` +
-    `background:repeating-linear-gradient(45deg,#0f151d,#0f151d 10px,#131a24 10px,#131a24 20px)">` +
-    `<div style="font-size:13px">${escapeHtml(msg)}</div>` +
-    `<div style="font-size:11px;opacity:.7">${escapeHtml(block.url)}</div></div>`
+    `<div style="width:100%;height:100%;display:flex;flex-direction:column;` +
+    `align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center;` +
+    `background:radial-gradient(120% 100% at 50% 0%,#141c27,#0f151d)">` +
+    `<div style="font-size:22px;font-weight:650;color:#e6edf3;max-width:90%;` +
+    `overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(block.title)}</div>` +
+    `<div style="font-size:12px;color:#58a6ff">${escapeHtml(host)}</div>` +
+    `<div style="font-size:11px;color:#6e7681;margin-top:4px">${escapeHtml(msg)}</div></div>`
   );
 }
 

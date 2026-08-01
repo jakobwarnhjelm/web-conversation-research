@@ -231,6 +231,15 @@ export function attachSnapshot(
   );
 }
 
+/**
+ * Byt ut hela blocksekvensen. Finns för redigeringslägen som skriver om dokumentet
+ * i ett svep — textvyn av notebooken — där block skapas, försvinner och byter plats
+ * samtidigt, och en sekvens av enskilda kommandon vore både långsam och otydlig.
+ */
+export function replaceBlocks(doc: FlowDocument, blocks: Block[], deps: Deps): FlowDocument {
+  return touch(doc, blocks.slice(), deps);
+}
+
 // --- Dokumentmetadata ------------------------------------------------------
 
 export function renameDocument(

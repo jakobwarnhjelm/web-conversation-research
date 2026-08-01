@@ -21,6 +21,8 @@ const api = {
     put: (bytes: Uint8Array, mime: string) => ipcRenderer.invoke("tabflow:blobs:put", { bytes, mime }),
     get: (ref: string) => ipcRenderer.invoke("tabflow:blobs:get", ref),
     delete: (ref: string) => ipcRenderer.invoke("tabflow:blobs:delete", ref),
+    open: (ref: string) => ipcRenderer.invoke("tabflow:blobs:open", ref),
+    reveal: (ref: string) => ipcRenderer.invoke("tabflow:blobs:reveal", ref),
   },
   openExternal: (url: string) => ipcRenderer.invoke("tabflow:shell:open", url),
 };
