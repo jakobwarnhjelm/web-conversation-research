@@ -12,8 +12,9 @@ Detta repo är i **riskupptäckts-/spikefasen** (mindcamp-project-spike). Ingen 
 |---|---|---|
 | **Spike E1** — WebContentsView × virtualisering (dödsstöt 1) | ✅ Kört, slutsats dragen | [`spike/e1-webview/`](spike/e1-webview/README.md) |
 | **M0** — spårsagnostisk domänkärna | ✅ 22 tester gröna, typecheck ren | [`domain/`](domain/) |
-| Port `SidblockRenderer` | ⏭ Nästa (informerad av spiken) | — |
-| M1 UI-skal / M2 Spår A / M3 / M4 Spår B / M5 | ⏭ Planerat | — |
+| **Portar** `SidblockRenderer` m.fl. | ✅ Frysta, informerade av spiken | [`app/src/ports/`](app/src/ports/index.ts) |
+| **M1** — UI-skal: virtualiserat flöde, textblock, blockoperationer, mock-snapshot | ✅ Bygger rent, renderar (skärmbild) | [`app/`](app/README.md) |
+| M2 Spår A / M3 / M4 Spår B / M5 | ⏭ Planerat | — |
 
 ## Spike E1 — resultat i en mening
 
@@ -35,12 +36,19 @@ npm test        # 22 tester
 npm run typecheck
 ```
 
+## Kör allt
+
+```bash
+cd domain && npm install && npm test        # 22 tester
+cd ../app && npm install && npm run dev      # http://localhost:5173
+```
+
 ## Nästa steg
 
-1. Frys `SidblockRenderer`/`SidblockHandle`-porten utifrån Spike E1 (native-handle + extern
-   bounds-styrning; DOM-chrome i reserverade remsor).
-2. M1: FlowView med virtualisering (spacer-divar + block-huvuden) + textblock.
-3. M2: `ChromeSnapshotRenderer` → publicerbar Chrome-MVP.
+1. ~~Frys porten~~ ✅ · ~~M1 UI-skal~~ ✅
+2. **M2 Spår A:** `ChromeSnapshotRenderer` (bild via `captureVisibleTab` + text-HTML via
+   läsbarhetsextraktion) bakom samma port + IndexedDB-blobstore → publicerbar Chrome-MVP.
+3. Dokumentlista/flera dokument (F-DOK-3), export/import-UI, sök (F-NAV).
 
 Öppen framtida risk (dödsstöt 2, ej spikad än): batch-"Snapshot: alla" över lagrade URL:er i
 Spår A är ett flik-orkestreringsflöde, inte en capture. Spikas före M3/F-SNAPWF.
