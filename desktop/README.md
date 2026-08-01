@@ -21,6 +21,30 @@ npm start       # bygg och kör den paketerade varianten
 `npm run dev` startar Vite på port 5174, väntar tills den svarar, kompilerar
 main/preload och startar Electron mot dev-servern. Inga extra dev-beroenden behövs.
 
+## Paketera
+
+```bash
+npm run dist:mac      # dmg + zip, arm64 och x64, i release/
+npm run dist:linux    # AppImage (deb kräver fpm, alltså en Linux-maskin)
+```
+
+### macOS: "appen är skadad"
+
+Bygget är osignerat i Apples mening — det finns inget Developer ID. På Apple-kisel
+vägrar macOS starta en helt osignerad app och rapporterar den som **skadad**, vilket
+låter som ett trasigt bygge men bara betyder osignerad. `build/afterPack.cjs`
+ad-hoc-signerar därför appen, vilket gör den körbar.
+
+Ad-hoc-signering ersätter inte notarisering. En **nedladdad** kopia får en
+karantänflagga som Gatekeeper stoppar ändå, och då hjälper inte högerklick → Öppna
+(det gäller "okänd utvecklare", inte "skadad"). Ta bort flaggan:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/TabFlow.app
+```
+
+En app som byggts lokalt har ingen karantänflagga och startar direkt.
+
 ## Arkitektur — bara adaptrar skiljer
 
 | Port | Spår B-adapter | Fil |

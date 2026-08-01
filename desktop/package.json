@@ -23,6 +23,7 @@
     "files": ["dist/**/*", "package.json"],
     "artifactName": "TabFlow-${version}-${os}-${arch}.${ext}",
     "npmRebuild": false,
+    "afterPack": "build/afterPack.cjs",
     "mac": {
       "category": "public.app-category.productivity",
       "identity": null,
