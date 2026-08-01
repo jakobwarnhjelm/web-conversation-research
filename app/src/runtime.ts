@@ -1,3 +1,4 @@
+import type { FlowDocument } from "@tabflow/domain";
 import type { BlobStore, DocumentStore, SidblockRenderer, TabController } from "./ports";
 
 /**
@@ -10,4 +11,11 @@ export interface AppRuntime {
   renderer: SidblockRenderer;
   store: DocumentStore;
   tabs: TabController;
+  /**
+   * Läge för nya sidblock. Spår B har levande vyer och sätter "live"; Spår A och
+   * dev-attrappen kan bara visa stillbilder och lämnar default ("snapshot").
+   */
+  defaultPageMode?: "live" | "snapshot";
+  /** Dokument att skapa när lagringen är tom. Låter varje spår välja sitt startinnehåll. */
+  seedDocument?: () => FlowDocument;
 }

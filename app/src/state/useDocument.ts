@@ -46,8 +46,10 @@ export interface DocumentActions {
 export function useDocument(
   initial: FlowDocument,
   store: DocumentStore,
+  options: { defaultPageMode?: "live" | "snapshot" } = {},
 ): { doc: FlowDocument; actions: DocumentActions } {
   const [doc, setDoc] = useState(initial);
+  const pageMode = options.defaultPageMode;
 
   // Autospar: spara senaste doc ~400 ms efter sista ändring.
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -64,7 +66,7 @@ export function useDocument(
       addText: (position, markdown) =>
         setDoc((d) => addBlock(d, createTextBlock({ markdown }, deps), position, deps)),
       addPage: (url, position) =>
-        setDoc((d) => addBlock(d, createPageBlock({ url }, deps), position, deps)),
+        setDoc((d) => addBlock(d, createPageBlock({ url, mode: pageMode }, deps), position, deps)),
       remove: (id) => setDoc((d) => removeBlock(d, id, deps)),
       duplicate: (id) => setDoc((d) => duplicateBlock(d, id, deps)),
       moveBy: (id, delta) => setDoc((d) => moveBlockBy(d, id, delta, deps)),
@@ -76,7 +78,7 @@ export function useDocument(
       applySnapshot: (id, art) => setDoc((d) => attachSnapshot(d, id, art, deps)),
       rename: (title) => setDoc((d) => renameDocument(d, title, deps)),
     }),
-    [],
+    [pageMode],
   );
 
   return { doc, actions };

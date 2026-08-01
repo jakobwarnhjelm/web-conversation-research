@@ -7,9 +7,17 @@
 const GAP = 14;
 const MARGIN_SCREENS = 1; // förhämtningsmarginal ≈ 1 skärmhöjd (F-LAZY-3 default)
 
-// data:-URL:er så spiken funkar UTAN nätverk. Byt mot riktiga https-URL:er lokalt.
+// Sätt SPIKE_OFFLINE=1 för de nätverksfria data:-URL:erna (originalspiken).
 const liveColors = ["#c0392b", "#2d7d46", "#2f5fbf", "#8250df", "#b8860b"];
+const REAL_SITES = [
+  "https://www.google.se",
+  "https://sv.wikipedia.org/wiki/Webbl%C3%A4sare",
+  "https://news.ycombinator.com",
+  "https://www.svt.se",
+  "https://example.com",
+];
 function livePage(i, title) {
+  if (!window.SPIKE_OFFLINE) return REAL_SITES[i % REAL_SITES.length];
   const c = liveColors[i % liveColors.length];
   const html =
     `<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;` +
