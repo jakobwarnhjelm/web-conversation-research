@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { HEIGHT_STEP_PX, type Block, type FlowDocument } from "@tabflow/domain";
+import { AddPageButton } from "./AddPageButton";
 import { TextBlockView } from "./TextBlockView";
 import { PageBlockView } from "./PageBlockView";
 import { InsertZone } from "./InsertZone";
@@ -47,14 +48,7 @@ export function FlowView({ doc }: { doc: FlowDocument }) {
             <button onClick={() => actions.addText({ at: "top" }, "# Ny anteckning\n")}>
               + Textblock
             </button>
-            <button
-              onClick={() => {
-                const url = prompt("URL till sidan:");
-                if (url) actions.addPage(url, { at: "top" });
-              }}
-            >
-              + Sida
-            </button>
+            <AddPageButton position={{ at: "top" }} />
           </div>
         </div>
       </div>
@@ -96,14 +90,7 @@ export function FlowView({ doc }: { doc: FlowDocument }) {
       </div>
       <div className="flow-footer">
         <button onClick={() => actions.addText({ at: "bottom" }, "")}>+ Text</button>
-        <button
-          onClick={() => {
-            const url = prompt("URL till sidan:");
-            if (url) actions.addPage(url, { at: "bottom" });
-          }}
-        >
-          + Sida
-        </button>
+        <AddPageButton position={{ at: "bottom" }} />
       </div>
     </div>
   );

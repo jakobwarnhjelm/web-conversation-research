@@ -39,6 +39,7 @@ export function PageBlockView({
     const handle = renderer.render(block, {
       container,
       getContentRect: () => container.getBoundingClientRect(),
+      getClipRect: () => scrollParent(container).getBoundingClientRect(),
     });
     handle.setLifecycle("active");
     handleRef.current = handle;
@@ -48,6 +49,34 @@ export function PageBlockView({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [block.id, renderer]);
+
+  // Håll ett ev. native-lager (Spår B) i takt med flödet. Spike E1: en WebContentsView
+  // följer inte med scrollen av sig själv och klipps inte av scroll-containern, så
+  // varje scroll/omlayout måste knuffa renderaren. No-op i Spår A och i mock-renderaren.
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+    const scroller = scrollParent(container);
+    let frame = 0;
+    const push = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        handleRef.current?.syncBounds();
+      });
+    };
+    push();
+    scroller.addEventListener("scroll", push, { passive: true });
+    window.addEventListener("resize", push);
+    const ro = new ResizeObserver(push);
+    ro.observe(container);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      scroller.removeEventListener("scroll", push);
+      window.removeEventListener("resize", push);
+      ro.disconnect();
+    };
+  }, [block.id, block.collapsed, block.height]);
 
   // Synka blockets data till handtaget vid varje ändring.
   useEffect(() => {
@@ -122,6 +151,15 @@ export function PageBlockView({
       )}
     </div>
   );
+}
+
+/** Närmaste vertikalt scrollande förälder — den yta innehållet måste klippas mot. */
+function scrollParent(el: HTMLElement): HTMLElement {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const oy = getComputedStyle(p).overflowY;
+    if (oy === "auto" || oy === "scroll") return p;
+  }
+  return document.documentElement;
 }
 
 function fmt(iso: string): string {

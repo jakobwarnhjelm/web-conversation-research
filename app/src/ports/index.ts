@@ -29,6 +29,12 @@ export interface SidblockHost {
    * Spår B använder den för `WebContentsView.setBounds()`. Spår A ignorerar den.
    */
   getContentRect(): DOMRectReadOnly;
+  /**
+   * Den synliga ytan som innehållet måste klippas mot (scroll-containerns rect).
+   * Spike E1: native-lager klipper INTE mot en scroll-container av sig själva, så
+   * värden måste räknas ut av den som äger layouten. Spår A ignorerar den.
+   */
+  getClipRect(): DOMRectReadOnly;
 }
 
 export interface SidblockRenderer {

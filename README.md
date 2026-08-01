@@ -15,8 +15,9 @@ Detta repo är i **riskupptäckts-/spikefasen** (mindcamp-project-spike). Ingen 
 | **Portar** `SidblockRenderer` m.fl. | ✅ Frysta, informerade av spiken | [`app/src/ports/`](app/src/ports/index.ts) |
 | **M1** — UI-skal: virtualiserat flöde, textblock, blockoperationer, mock-snapshot | ✅ Bygger rent, renderar (skärmbild) | [`app/`](app/README.md) |
 | **M2 Spår A** — Chrome MV3-tillägg: fångst, dubbel artefakt, IndexedDB | ✅ Bygger rent; capture testas manuellt i Chrome | [`extension/`](extension/README.md) |
-| **Text-HTML-extraktion** (F-SNAP-3) + IndexedDB-blobstore | ✅ 12 tester gröna | [`app/src/lib/`](app/src/lib/extractReadable.ts) |
-| M3 / M4 Spår B / M5 | ⏭ Planerat | — |
+| **Text-HTML-extraktion** (F-SNAP-3) + IndexedDB-blobstore | ✅ 15 tester gröna | [`app/src/lib/`](app/src/lib/extractReadable.ts) |
+| **M4 Spår B** — Electron: levande `WebContentsView` per block, LRU, fångst till fil | ✅ Verifierad körning (tak hålls, dispose sker, dubbel artefakt) | [`desktop/`](desktop/README.md) |
+| M3 / M5 | ⏭ Planerat | — |
 
 ## Spike E1 — resultat i en mening
 
@@ -38,19 +39,31 @@ npm test        # 22 tester
 npm run typecheck
 ```
 
+## M4 — Spår B (Electron)
+
+Den enda varianten där sidorna är **riktiga, levande webbläsarfönster**. Samma domänkärna,
+portar och UI som `app/`; bara adaptrarna skiljer. Tre vyer får leva samtidigt, resten
+avlastas med LRU och väcks när du scrollar tillbaka. Detaljer: [`desktop/README.md`](desktop/README.md).
+
+```bash
+cd desktop && npm install && npm run dev
+```
+
 ## Kör allt
 
 ```bash
-cd domain && npm install && npm test        # 22 tester
-cd ../app && npm install && npm run dev      # http://localhost:5173
+cd domain && npm install && npm test         # 22 tester
+cd ../app && npm install && npm test         # 15 tester
+cd ../desktop && npm install && npm run dev  # Electron-appen med levande sidor
 ```
 
 ## Nästa steg
 
-1. ~~Frys porten~~ ✅ · ~~M1 UI-skal~~ ✅
-2. **M2 Spår A:** `ChromeSnapshotRenderer` (bild via `captureVisibleTab` + text-HTML via
-   läsbarhetsextraktion) bakom samma port + IndexedDB-blobstore → publicerbar Chrome-MVP.
+1. ~~Frys porten~~ ✅ · ~~M1 UI-skal~~ ✅ · ~~M2 Spår A~~ ✅ · ~~M4 Spår B~~ ✅
+2. Batch-"Snapshot: alla" (F-SNAPWF) — börja i Spår B, där mekaniken är fri från
+   flik-orkestrering.
 3. Dokumentlista/flera dokument (F-DOK-3), export/import-UI, sök (F-NAV).
 
-Öppen framtida risk (dödsstöt 2, ej spikad än): batch-"Snapshot: alla" över lagrade URL:er i
-Spår A är ett flik-orkestreringsflöde, inte en capture. Spikas före M3/F-SNAPWF.
+Öppen risk **för Spår A** (dödsstöt 2, ej spikad): batch-"Snapshot: alla" över lagrade
+URL:er i tillägget är ett flik-orkestreringsflöde, inte en capture. I Spår B finns den
+risken inte — där fångas en URL i ett dolt fönster utan att någon flik blir aktiv.

@@ -60,7 +60,7 @@ export default function App({ runtime }: { runtime: AppRuntime }) {
     (async () => {
       const list = await runtime.store.list();
       const loaded = list[0] ? await runtime.store.load(list[0].id) : null;
-      const doc = loaded ?? demoDocument();
+      const doc = loaded ?? (runtime.seedDocument ?? demoDocument)();
       if (!loaded) await runtime.store.save(doc);
       if (!cancelled) setInitial(doc);
     })();
@@ -74,7 +74,9 @@ export default function App({ runtime }: { runtime: AppRuntime }) {
 }
 
 function Workspace({ initial, runtime }: { initial: FlowDocument; runtime: AppRuntime }) {
-  const { doc, actions } = useDocument(initial, runtime.store);
+  const { doc, actions } = useDocument(initial, runtime.store, {
+    defaultPageMode: runtime.defaultPageMode,
+  });
   const ctx: AppServices = {
     actions,
     renderer: runtime.renderer,
