@@ -37,7 +37,14 @@ jobs:
           cache: npm
           cache-dependency-path: desktop/package-lock.json
 
-      - name: Installera beroenden
+      # Renderaren kompilerar app/-källkoden direkt via alias. TypeScript och Vite
+      # slår upp react m.m. från den importerande filens katalog, alltså
+      # app/node_modules — desktop/node_modules räcker inte.
+      - name: Installera beroenden (app)
+        working-directory: app
+        run: npm ci
+
+      - name: Installera beroenden (desktop)
         working-directory: desktop
         run: npm ci
 

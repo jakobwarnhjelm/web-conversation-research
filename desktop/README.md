@@ -6,7 +6,12 @@ portar och samma React-UI som `../app`; bara adaptrarna är Electron-specifika.
 
 ## Kör
 
+Renderaren kompilerar `../app`-källkoden direkt via alias, och både TypeScript och
+Vite slår upp `react` m.fl. från den importerande filens katalog. **`app/` måste
+alltså ha sina beroenden installerade** — `desktop/node_modules` räcker inte.
+
 ```bash
+npm --prefix ../app install
 npm install
 npm run dev     # Vite + Electron mot dev-servern, hot reload i UI:t
 npm run build   # typecheck + renderare till dist/renderer + main/preload till dist/electron
