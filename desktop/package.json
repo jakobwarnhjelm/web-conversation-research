@@ -17,7 +17,7 @@
     "dist:linux": "npm run build && electron-builder --linux --publish never"
   },
   "build": {
-    "appId": "se.mindcamp.tabflow",
+    "appId": "se.warnhjelm.tabflow",
     "productName": "TabFlow",
     "directories": { "output": "release", "buildResources": "build" },
     "files": ["dist/**/*", "package.json"],

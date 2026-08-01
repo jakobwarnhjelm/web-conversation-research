@@ -1,90 +1,182 @@
 # TabFlow
 
-Scroll-baserad "tab-notebook" — beskrivande text varvad med fönster av webbsidor i ett
-vertikalt flöde. Se kravspec v1.1.
+En anteckningsbok där webbsidor är block. Du skriver i Markdown och lägger in
+webbsidor där de hör hemma — och sidorna är **riktiga, levande webbläsarfönster**
+mitt i texten, inte skärmbilder. Allt ligger i ett enda vertikalt flöde som du
+scrollar igenom.
 
-Detta repo är i **riskupptäckts-/spikefasen** (mindcamp-project-spike). Ingen produktions-UI
-är byggd ännu — vi validerar det farligaste antagandet först.
+Bra när du jämför saker: leverantörer, bostäder, resmål, forskningsartiklar. Din
+analys och källorna du bygger den på i samma dokument.
 
-## Status
+Allt sparas lokalt på din dator. Inget konto, ingen inloggning, ingen server.
 
-| Del | Läge | Var |
-|---|---|---|
-| **Spike E1** — WebContentsView × virtualisering (dödsstöt 1) | ✅ Kört, slutsats dragen | [`spike/e1-webview/`](spike/e1-webview/README.md) |
-| **M0** — spårsagnostisk domänkärna | ✅ 22 tester gröna, typecheck ren | [`domain/`](domain/) |
-| **Portar** `SidblockRenderer` m.fl. | ✅ Frysta, informerade av spiken | [`app/src/ports/`](app/src/ports/index.ts) |
-| **M1** — UI-skal: virtualiserat flöde, textblock, blockoperationer, mock-snapshot | ✅ Bygger rent, renderar (skärmbild) | [`app/`](app/README.md) |
-| **M2 Spår A** — Chrome MV3-tillägg: fångst, dubbel artefakt, IndexedDB | ✅ Bygger rent; capture testas manuellt i Chrome | [`extension/`](extension/README.md) |
-| **Text-HTML-extraktion** (F-SNAP-3) + IndexedDB-blobstore | ✅ 15 tester gröna | [`app/src/lib/`](app/src/lib/extractReadable.ts) |
-| **M4 Spår B** — Electron: levande `WebContentsView` per block, LRU, fångst till fil | ✅ Verifierad körning (tak hålls, dispose sker, dubbel artefakt) | [`desktop/`](desktop/README.md) |
-| M3 / M5 | ⏭ Planerat | — |
+---
 
-## Spike E1 — resultat i en mening
+## Installera
 
-Live `WebContentsView` kan positioneras, disposas och LRU-takas i ett virtualiserat flöde —
-**men DOM-chrome kan inte ligga ovanpå en native vy.** Följd: all interaktiv chrome (verktygsrad,
-"+"-zon, urvals-kryssrutor) måste ligga i remsor *utanför* vyns rect, eller så byts live-vyn mot
-sin snapshot-bild i overlay-lägen. Detaljer + bevisbild: `spike/e1-webview/README.md`.
+Hämta senaste versionen från [Releases](https://github.com/jakobwarnhjelm/web-conversation-research/releases/latest).
 
-## M0 — domänkärna
+| Du kör | Fil |
+|---|---|
+| Mac med Apple-kisel (M1–M4) | `TabFlow-<version>-mac-arm64.dmg` |
+| Mac med Intel | `TabFlow-<version>-mac-x64.dmg` |
+| Linux, vad som helst | `TabFlow-<version>-linux-x86_64.AppImage` |
+| Debian eller Ubuntu | `TabFlow-<version>-linux-amd64.deb` |
 
-Ren TypeScript, inget UI-/spårberoende (avsnitt 5–6 i specen): datamodell, block-kommandon
-(add/move/remove/insert/duplicate/collapse/höjd/etikett/snapshot/live-växel), serialisering +
-migrering.
+Windows finns inte ännu.
+
+### macOS
+
+Öppna dmg-filen och dra över **TabFlow** till Program. Starta den sedan **en gång**
+via Terminal-raden nedan:
 
 ```bash
-cd domain
-npm install
-npm test        # 22 tester
-npm run typecheck
+xattr -dr com.apple.quarantine /Applications/TabFlow.app
 ```
 
-## Webbdemo — att dela med andra
+Utan det säger macOS att appen är *skadad*. Den är inte skadad — den saknar Apples
+notarisering, som kräver ett betalt utvecklarkonto. Meddelandet är missvisande, och
+högerklick → Öppna hjälper inte just mot det. Efter kommandot startar appen som
+vilken app som helst, och du behöver aldrig göra om det.
 
-`app/` bygger till **en enda HTML-fil** utan server, konto eller inloggning. Dokumentet
-ligger i localStorage och bilder i IndexedDB, så allt stannar i besökarens webbläsare.
+### Linux
+
+AppImage behöver körrättighet och kan sedan ligga var som helst:
 
 ```bash
-cd app && npm run build:single    # dist/tabflow-single.html — öppna eller lägg var som helst
+chmod +x TabFlow-<version>-linux-x86_64.AppImage
+./TabFlow-<version>-linux-x86_64.AppImage
 ```
 
-Begränsningen är ärlig och oundviklig: en webbläsare får inte bädda in främmande sidor,
-så sidblock visas som länkkort och 📷 sparar en platshållarkopia. Levande sidor finns
-bara i Electron-versionen.
-
-## Textvyn — notebooken som råtext
-
-Knappen **Text** i huvudet visar hela dokumentet som markdown-snuttar varvat med
-URL-rader. En rad som bara innehåller en URL blir ett sidblock; allt annat blir text.
-Sidblock återanvänds per URL vid sparning, så snapshots överlever en omskrivning.
-Det gör dokumentet klistrbart — skriv anteckningar och länkar var som helst och klistra
-in alltihop.
-
-## M4 — Spår B (Electron)
-
-Den enda varianten där sidorna är **riktiga, levande webbläsarfönster**. Samma domänkärna,
-portar och UI som `app/`; bara adaptrarna skiljer. Tre vyer får leva samtidigt, resten
-avlastas med LRU och väcks när du scrollar tillbaka. Detaljer: [`desktop/README.md`](desktop/README.md).
+På Debian och Ubuntu kan du i stället installera paketet:
 
 ```bash
-cd desktop && npm install && npm run dev
+sudo dpkg -i TabFlow-<version>-linux-amd64.deb
 ```
 
-## Kör allt
+---
 
-```bash
-cd domain && npm install && npm test         # 22 tester
-cd ../app && npm install && npm test         # 15 tester
-cd ../desktop && npm install && npm run dev  # Electron-appen med levande sidor
+## Använda
+
+### Flödet
+
+Dokumentet är en lodrät stapel av **block**. Ett block är antingen text eller en
+webbsida. Ordningen i flödet är den enda ordningen som finns — det du ser är det
+som är sparat.
+
+Överst står dokumentets titel. Klicka i den för att byta namn.
+
+### Skriva text
+
+Klicka i ett textblock så blir det redigerbart. Du skriver **Markdown**: `#` för
+rubriker, `**fetstil**`, punktlistor, länkar, kodblock.
+
+- **Esc** eller **Cmd+Enter** — rendera texten igen
+- Klicka utanför blocket gör samma sak
+
+### Lägga till block
+
+Håll muspekaren i **mellanrummet mellan två block** så dyker en rad upp med
+**+ Text** och **+ Sida**. Samma två knappar finns längst ned i flödet för att
+lägga till i slutet.
+
+**+ Sida** öppnar ett fält där du skriver adressen. Du kan skriva kort —
+`example.com` blir `https://example.com`.
+
+### Webbsidor i flödet
+
+Ett sidblock laddar sidan på riktigt. Du kan scrolla i den, klicka i den och logga
+in i den, precis som i en vanlig flik.
+
+**Tre sidor är vakna samtidigt.** Scrollar du bort från en sida somnar den för att
+spara minne och batteri, och vaknar när du kommer tillbaka. Det är meningen att det
+ska gå obemärkt förbi, men på en långsam uppkoppling kan du se en sida ladda om.
+
+I blockets huvudrad finns:
+
+| Knapp | Gör |
+|---|---|
+| **Liten / Medel / Stor** | hur hög sidrutan är |
+| **📷** | sparar en kopia av sidan i blocket |
+| **▶ / ▣** | växlar mellan levande sida och sparad kopia |
+| **↗** | öppnar sidan i din vanliga webbläsare |
+
+### Spara en kopia av en sida
+
+**📷** fryser sidan som den ser ut just nu. Bra när innehållet kan ändras eller
+försvinna — priser, annonser, artiklar.
+
+Varje kopia innehåller tre saker, och du når dem längst ned i blocket när kopian
+visas:
+
+- **Visa textversion** — bara texten, avskalad och lättläst
+- **Öppna arkiv (hela sidan)** — hela sidan med bilder och formgivning, i en fil
+- **Visa i Finder** — filerna på disk, om du vill flytta eller skicka dem
+
+Blocket visar kopian efter fångst. Tryck **▶** för att gå tillbaka till den levande
+sidan; blocket behåller båda.
+
+### Ordna om
+
+Varje block har en liten verktygsrad till höger i huvudet:
+
+| Knapp | Gör |
+|---|---|
+| **↑ ↓** | flytta blocket upp eller ner |
+| **▾ ▸** | fäll ihop eller ut |
+| **⧉** | duplicera |
+| **✕** | radera |
+
+### Redigera allt som text
+
+Knappen **Text** uppe till höger visar hela anteckningsboken som råtext:
+Markdown-snuttar varvat med webbadresser, en per rad.
+
+```
+# Leverantörer
+
+Tre kandidater. A är billigast men har sämst support.
+
+https://example.com/leverantor-a
+
+## Leverantör B
+Dyrare, men bättre avtal.
+
+https://example.org/leverantor-b
 ```
 
-## Nästa steg
+En rad som **bara** innehåller en adress blir ett sidblock. Allt annat blir text.
+Prosa som råkar nämna en domän lämnas i fred.
 
-1. ~~Frys porten~~ ✅ · ~~M1 UI-skal~~ ✅ · ~~M2 Spår A~~ ✅ · ~~M4 Spår B~~ ✅
-2. Batch-"Snapshot: alla" (F-SNAPWF) — börja i Spår B, där mekaniken är fri från
-   flik-orkestrering.
-3. Dokumentlista/flera dokument (F-DOK-3), export/import-UI, sök (F-NAV).
+Det gör dokumentet klistrbart: skriv anteckningar och länkar var som helst, klistra
+in alltihop och spara. Sparade kopior följer med sina adresser, så du kan skriva om
+texten eller flytta om raderna utan att tappa något du fångat.
 
-Öppen risk **för Spår A** (dödsstöt 2, ej spikad): batch-"Snapshot: alla" över lagrade
-URL:er i tillägget är ett flik-orkestreringsflöde, inte en capture. I Spår B finns den
-risken inte — där fångas en URL i ett dolt fönster utan att någon flik blir aktiv.
+**Spara** eller **Cmd+Enter** verkställer. **Avbryt** eller **Esc** slänger ändringen.
+
+---
+
+## Var dina saker ligger
+
+Dokument och sparade sidkopior ligger på din egen disk:
+
+| System | Plats |
+|---|---|
+| macOS | `~/Library/Application Support/TabFlow/tabflow` |
+| Linux | `~/.config/TabFlow/tabflow` |
+
+Vill du säkerhetskopiera eller flytta till en annan dator är det den mappen som
+gäller. Inloggningar du gör i sidblock sparas separat och följer inte med.
+
+---
+
+## Om något strular
+
+**Appen startar inte på macOS** — se `xattr`-kommandot under Installera.
+
+**En sida vill inte visas.** Vissa sajter vägrar laddas utanför en vanlig
+webbläsare. Tryck **↗** för att öppna den externt, och **📷** om du vill ha en
+kopia i flödet ändå.
+
+**Snapshot tar tid.** En sida som inte är vaken laddas i bakgrunden först. På tunga
+sajter tar det några sekunder.
