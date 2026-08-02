@@ -5,9 +5,37 @@
  * håller deras cookies borta från renderaren och gör att en inloggning i ett
  * sidblock överlever omstart utan att appen själv får något sessionstillstånd.
  */
-import { app } from "electron";
+import { app, session, type Session } from "electron";
 
 export const GUEST_PARTITION = "persist:tabflow-guest";
+
+export function guestSession(): Session {
+  return session.fromPartition(GUEST_PARTITION);
+}
+
+/**
+ * Utan behörighetshanterare beviljar Electron det mesta som en sida ber om. En
+ * anteckningsbok behöver varken kamera, mikrofon, position, notiser eller urklipp,
+ * och en inbäddad sida kan be om dem i en vy användaren inte ens tittar på — eller
+ * i det dolda fönster som fångsten använder. Därför nekas allt.
+ */
+export function hardenGuestSession(): void {
+  const s = guestSession();
+  s.setUserAgent(GUEST_USER_AGENT);
+  s.setPermissionRequestHandler((_wc, permission, callback) => {
+    console.log(`[tabflow] nekade behörighet: ${permission}`);
+    callback(false);
+  });
+  s.setPermissionCheckHandler(() => false);
+}
+
+/** Rensar allt sessionstillstånd — kakor, lagring, cache. Loggar ut från allt. */
+export async function clearGuestSession(): Promise<void> {
+  const s = guestSession();
+  await s.clearStorageData();
+  await s.clearCache();
+  await s.clearAuthCache();
+}
 
 /**
  * Sidor serveras annorlunda — ibland som "webbläsaren stöds inte" — när UA:n

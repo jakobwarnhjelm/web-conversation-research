@@ -37,7 +37,15 @@ export interface TabflowBridge {
     sync(items: SyncItem[]): Promise<SyncResult>;
     reload(blockId: string): Promise<void>;
   };
-  capture(blockId: string, url: string): Promise<CaptureResult>;
+  /** `blockId: null` = ingen monterad vy att fånga; sidan laddas i bakgrunden. */
+  capture(
+    blockId: string | null,
+    url: string,
+    options?: { archive?: boolean },
+  ): Promise<CaptureResult>;
+  session: {
+    clear(): Promise<void>;
+  };
   docs: {
     list(): Promise<DocumentSummary[]>;
     load(id: string): Promise<string | null>;

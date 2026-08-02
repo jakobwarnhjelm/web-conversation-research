@@ -14,7 +14,8 @@ import "@tabflow/app/styles.css";
 import { IpcBlobStore } from "./adapters/IpcBlobStore";
 import { IpcDocumentStore } from "./adapters/IpcDocumentStore";
 import { ShellTabController } from "./adapters/ShellTabController";
-import { WebviewRenderer } from "./adapters/WebviewRenderer";
+import { IpcSnapshotService, WebviewRenderer } from "./adapters/WebviewRenderer";
+import { bridge } from "./bridge";
 
 /** Startdokument med riktiga, levande sidor — det Spår B finns för. */
 function seedDocument(): FlowDocument {
@@ -52,6 +53,8 @@ function createElectronRuntime(): AppRuntime {
     tabs: new ShellTabController(),
     defaultPageMode: "live",
     seedDocument,
+    snapshots: new IpcSnapshotService(),
+    guestSession: { clearAll: () => bridge().session.clear() },
   };
 }
 

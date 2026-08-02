@@ -8,7 +8,9 @@ import {
 } from "@tabflow/domain";
 import { ServicesProvider, type AppServices } from "./state/services";
 import { useDocument } from "./state/useDocument";
+import { CaptureAllPanel } from "./ui/CaptureAllPanel";
 import { FlowView } from "./ui/FlowView";
+import { SessionPanel } from "./ui/SessionPanel";
 import { SourceEditor } from "./ui/SourceEditor";
 import { systemClock, uuidIds } from "./lib/env";
 import type { AppRuntime } from "./runtime";
@@ -79,11 +81,14 @@ function Workspace({ initial, runtime }: { initial: FlowDocument; runtime: AppRu
     defaultPageMode: runtime.defaultPageMode,
   });
   const [sourceMode, setSourceMode] = useState(false);
+  const [panel, setPanel] = useState<"capture" | "session" | null>(null);
   const ctx: AppServices = {
     actions,
     renderer: runtime.renderer,
     blobs: runtime.blobs,
     tabs: runtime.tabs,
+    snapshots: runtime.snapshots,
+    guestSession: runtime.guestSession,
   };
 
   return (
@@ -103,8 +108,30 @@ function Workspace({ initial, runtime }: { initial: FlowDocument; runtime: AppRu
         >
           {sourceMode ? "Flöde" : "Text"}
         </button>
+        {runtime.snapshots && (
+          <button
+            className="header-action"
+            onClick={() => setPanel((p) => (p === "capture" ? null : "capture"))}
+            title="Spara en kopia av varje sida i anteckningen"
+          >
+            Fånga alla
+          </button>
+        )}
+        {runtime.guestSession && (
+          <button
+            className="header-action"
+            onClick={() => setPanel((p) => (p === "session" ? null : "session"))}
+            title="Logga ut från alla sidor"
+          >
+            Logga ut…
+          </button>
+        )}
         <div className="doc-meta">{doc.blocks.length} block</div>
       </header>
+
+      {panel === "capture" && <CaptureAllPanel doc={doc} onClose={() => setPanel(null)} />}
+      {panel === "session" && <SessionPanel onClose={() => setPanel(null)} />}
+
       {sourceMode ? (
         <SourceEditor doc={doc} onClose={() => setSourceMode(false)} />
       ) : (

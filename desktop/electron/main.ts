@@ -6,7 +6,7 @@
 import { BrowserWindow, app, ipcMain, shell } from "electron";
 import path from "node:path";
 import { captureLiveView, captureUrlOffscreen, type CaptureResult } from "./capture";
-import { GUEST_PARTITION, GUEST_USER_AGENT } from "./guest";
+import { clearGuestSession, hardenGuestSession } from "./guest";
 import {
   blobFilePath,
   deleteBlob,
@@ -52,7 +52,9 @@ function createWindow(): void {
     return { action: "deny" };
   });
 
-  const devUrl = process.env.VITE_DEV_SERVER_URL;
+  // Bara i utveckling. Renderaren bär hela window.tabflow-bryggan, så en miljö-
+  // variabel får aldrig kunna styra in fjärrkod i den i ett installerat bygge.
+  const devUrl = app.isPackaged ? undefined : process.env.VITE_DEV_SERVER_URL;
   if (devUrl) {
     void win.loadURL(devUrl);
   } else {
@@ -80,11 +82,25 @@ function registerIpc(): void {
 
   ipcMain.handle(
     "tabflow:capture",
-    async (_e, arg: { blockId: string; url: string }): Promise<CaptureResult> => {
-      const live = views?.peek(arg.blockId) ?? null;
-      return live ? await captureLiveView(live, arg.url) : await captureUrlOffscreen(arg.url);
+    async (
+      _e,
+      arg: { blockId: string | null; url: string; archive?: boolean },
+    ): Promise<CaptureResult> => {
+      const options = { archive: arg.archive === true };
+      // Utan block-id (batchfångst) finns ingen levande vy att fånga — då laddas
+      // sidan i ett dolt fönster, vilket ändå gäller för allt som inte är i vy.
+      const live = arg.blockId ? (views?.peek(arg.blockId) ?? null) : null;
+      return live
+        ? await captureLiveView(live, arg.url, options)
+        : await captureUrlOffscreen(arg.url, options);
     },
   );
+
+  ipcMain.handle("tabflow:session:clear", async () => {
+    await clearGuestSession();
+    // Vyerna håller kvar den gamla sessionen tills de byggs om.
+    views?.disposeAll();
+  });
 
   ipcMain.handle("tabflow:docs:list", () => listDocuments());
   ipcMain.handle("tabflow:docs:load", (_e, id: string) => loadDocument(id));
@@ -116,9 +132,8 @@ function registerIpc(): void {
 
 void app.whenReady().then(async () => {
   await initStorage();
-  // Sätt UA:n på gästsessionen innan någon vy hinner skapas.
-  const { session } = await import("electron");
-  session.fromPartition(GUEST_PARTITION).setUserAgent(GUEST_USER_AGENT);
+  // Måste ske innan någon gästvy hinner skapas.
+  hardenGuestSession();
 
   registerIpc();
   createWindow();

@@ -6,10 +6,12 @@ import {
 } from "@tabflow/domain";
 import type {
   BlobStore,
+  CaptureOptions,
   LifecycleState,
   SidblockHandle,
   SidblockHost,
   SidblockRenderer,
+  SnapshotService,
 } from "@tabflow/app/ports";
 import { bridge, type Bounds, type SyncItem } from "../bridge";
 
@@ -101,6 +103,24 @@ function clip(reg: Registration): Bounds | null {
 
 const sharedBridge = new ViewBridge();
 
+/**
+ * Fångst utan monterat block, för "Fånga alla". Sidan laddas i ett dolt fönster i
+ * main-processen, som köar anropen så att en lång anteckning inte startar ett
+ * tjugotal renderprocesser samtidigt.
+ */
+export class IpcSnapshotService implements SnapshotService {
+  async capture(url: string, options?: CaptureOptions): Promise<SnapshotArtifact> {
+    const r = await bridge().capture(null, url, options);
+    return {
+      imageRef: r.imageRef,
+      textHtmlRef: r.textHtmlRef,
+      singleFileRef: r.singleFileRef,
+      fullPage: r.fullPage,
+      capturedAt: r.capturedAt,
+    };
+  }
+}
+
 export class WebviewRenderer implements SidblockRenderer {
   readonly kind = "electron-webview";
   constructor(private blobs: BlobStore) {}
@@ -162,8 +182,8 @@ class WebviewHandle implements SidblockHandle {
     this.syncBounds();
   }
 
-  async snapshot(): Promise<SnapshotArtifact> {
-    const r = await bridge().capture(this.block.id, this.block.url);
+  async snapshot(options?: CaptureOptions): Promise<SnapshotArtifact> {
+    const r = await bridge().capture(this.block.id, this.block.url, options);
     return {
       imageRef: r.imageRef,
       textHtmlRef: r.textHtmlRef,

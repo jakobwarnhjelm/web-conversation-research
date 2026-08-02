@@ -10,7 +10,11 @@ const api = {
     sync: (items: unknown[]) => ipcRenderer.invoke("tabflow:views:sync", items),
     reload: (blockId: string) => ipcRenderer.invoke("tabflow:views:reload", blockId),
   },
-  capture: (blockId: string, url: string) => ipcRenderer.invoke("tabflow:capture", { blockId, url }),
+  capture: (blockId: string | null, url: string, options?: { archive?: boolean }) =>
+    ipcRenderer.invoke("tabflow:capture", { blockId, url, archive: options?.archive === true }),
+  session: {
+    clear: () => ipcRenderer.invoke("tabflow:session:clear"),
+  },
   docs: {
     list: () => ipcRenderer.invoke("tabflow:docs:list"),
     load: (id: string) => ipcRenderer.invoke("tabflow:docs:load", id),

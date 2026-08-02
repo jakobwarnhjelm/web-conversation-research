@@ -33,6 +33,7 @@ export function PageBlockView({
   const handleRef = useRef<SidblockHandle | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Skapa/förstör renderar-handtaget en gång per block-id.
   useEffect(() => {
@@ -90,13 +91,14 @@ export function PageBlockView({
 
   // Fångst kan misslyckas i alla spår — nekad sida, nätverksfel, stängd vy. Felet
   // hör hemma på blocket det gäller, inte i konsolen.
-  async function doSnapshot() {
+  async function doSnapshot(archive: boolean) {
     const handle = handleRef.current;
     if (!handle || busy) return;
+    setMenuOpen(false);
     setBusy(true);
     setError(null);
     try {
-      const artifact = await handle.snapshot();
+      const artifact = await handle.snapshot({ archive });
       actions.applySnapshot(block.id, artifact);
       actions.setDisplay(block.id, "snapshot");
     } catch (e) {
@@ -144,8 +146,17 @@ export function PageBlockView({
               {isLive ? "▣" : "▶"}
             </button>
           )}
-          <button title="Skapa snapshot" onClick={doSnapshot} disabled={busy}>
+          <button title="Skapa snapshot" onClick={() => void doSnapshot(false)} disabled={busy}>
             {busy ? "…" : "📷"}
+          </button>
+          <button
+            title="Fler sätt att spara"
+            aria-haspopup="true"
+            aria-expanded={menuOpen}
+            disabled={busy}
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            ▾
           </button>
           <button title="Öppna som flik" onClick={() => tabs.open(block.url)}>
             ↗
@@ -153,6 +164,27 @@ export function PageBlockView({
         </div>
         <BlockChrome block={block} isFirst={isFirst} isLast={isLast} />
       </div>
+
+      {/* Ligger i flödet, inte som överlägg: Spike E1 visade att inget DOM kan ritas
+          ovanpå en native-vy, så menyn skjuter ned innehållet i stället för att täcka det. */}
+      {menuOpen && (
+        <div className="snap-menu">
+          <button onClick={() => void doSnapshot(false)}>
+            <strong>Spara kopia</strong>
+            <span>Bild och textversion.</span>
+          </button>
+          <button onClick={() => void doSnapshot(true)}>
+            <strong>Spara kopia med helsidearkiv</strong>
+            <span>
+              Bevarar sidan exakt som den ser ut — även det du är inloggad för. Arkivfilen
+              kan innehålla känsliga uppgifter.
+            </span>
+          </button>
+          <button className="snap-menu-close" onClick={() => setMenuOpen(false)} title="Stäng">
+            ✕
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="block-error" role="alert">
