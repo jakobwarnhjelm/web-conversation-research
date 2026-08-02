@@ -1,6 +1,6 @@
 {
   "name": "@tabflow/desktop",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "TabFlow Spår B — Electron-app med levande WebContentsView per sidblock (M4).",
   "author": "Jakob Wärnhjelm <jakob@warnhjelm.se>",
