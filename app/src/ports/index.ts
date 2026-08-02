@@ -21,6 +21,32 @@ import type {
 /** Livscykeltillstånd per sidblock (avsnitt 7.1). Driver lazy-loading. */
 export type LifecycleState = "unloaded" | "warm" | "active";
 
+export interface CaptureOptions {
+  /**
+   * Spara även ett helsidearkiv (F-SNAP-9). Av som förval: arkivet bevarar sidan
+   * exakt som den såg ut, vilket för en inloggad sida betyder dolda formulärfält,
+   * inbäddad JSON om användaren och resurser hämtade med sessionens kakor. Ett
+   * spår som inte kan producera arkiv ignorerar flaggan och svarar med null.
+   */
+  archive?: boolean;
+}
+
+/**
+ * Fångst utan monterat sidblock. Flödet är virtualiserat, så handtag finns bara
+ * för block som råkar vara i vy — en "fånga alla" måste därför gå vid sidan av
+ * dem. Valfri: spår som inte kan fånga på egen hand utelämnar den, och
+ * gränssnittet döljer då funktionen.
+ */
+export interface SnapshotService {
+  capture(url: string, options?: CaptureOptions): Promise<SnapshotArtifact>;
+}
+
+/** Sessionen som inbäddade sidor delar. Bär användarens inloggningar. */
+export interface GuestSessionController {
+  /** Rensar kakor, lagring och cache — loggar ut från alla sidor. */
+  clearAll(): Promise<void>;
+}
+
 export interface SidblockHost {
   /** DOM-container i flödet för blockets chrome (huvud) + ev. snapshot-bild. */
   readonly container: HTMLElement;
@@ -49,7 +75,7 @@ export interface SidblockHandle {
   /** Hämta om / förnya (reload live-vy eller re-fetcha snapshot). F-SID-6. */
   refresh(): Promise<void>;
   /** Skapa en snapshot: dubbel artefakt (bild + text-HTML). F-SNAP-1. */
-  snapshot(): Promise<SnapshotArtifact>;
+  snapshot(options?: CaptureOptions): Promise<SnapshotArtifact>;
   /** Växla vilken artefakt som visas (live/snapshot) per block. F-SNAPWF-8. */
   setDisplay(display: RenderDisplay): void;
   /** Driver lazy-loading: ladda/avlasta faktiska resurser. F-LAZY-2/5. */

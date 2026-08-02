@@ -104,17 +104,30 @@ I blockets huvudrad finns:
 ### Spara en kopia av en sida
 
 **📷** fryser sidan som den ser ut just nu. Bra när innehållet kan ändras eller
-försvinna — priser, annonser, artiklar.
+försvinna — priser, annonser, artiklar. Du får en bild och en avskalad textversion.
 
-Varje kopia innehåller tre saker, och du når dem längst ned i blocket när kopian
-visas:
+Bredvid kameran finns **▾** med ett andra alternativ: *Spara kopia med helsidearkiv*.
+Arkivet bevarar sidan exakt, med bilder och formgivning, i en enda fil. Det är därför
+ett eget val och inte något som händer automatiskt — läs varför under
+[Om inloggningar](#om-inloggningar).
+
+Nås längst ned i blocket när kopian visas:
 
 - **Visa textversion** — bara texten, avskalad och lättläst
-- **Öppna arkiv (hela sidan)** — hela sidan med bilder och formgivning, i en fil
+- **Öppna arkiv (hela sidan)** — finns om du sparade ett arkiv
 - **Visa i Finder** — filerna på disk, om du vill flytta eller skicka dem
 
 Blocket visar kopian efter fångst. Tryck **▶** för att gå tillbaka till den levande
 sidan; blocket behåller båda.
+
+### Spara alla sidor på en gång
+
+**Fånga alla** i huvudet sparar en kopia av varje sida i anteckningen. Sidor som inte
+är öppna hämtas i bakgrunden, två åt gången, så det tar en stund — förloppet räknas upp
+och går att avbryta.
+
+Du kan hoppa över sidor som redan har en kopia, och välja om helsidearkiv ska ingå.
+Blocken fortsätter visa den levande sidan efteråt; du arkiverar, du byter inte vy.
 
 ### Ordna om
 
@@ -156,17 +169,37 @@ texten eller flytta om raderna utan att tappa något du fångat.
 
 ---
 
+## Om inloggningar
+
+Du kan logga in på sidor i flödet precis som i en vanlig flik, och du förblir inloggad
+mellan omstarter. TabFlow ser aldrig ditt lösenord — det går direkt till sajten, och
+appen sparar det inte någonstans. Det som ligger kvar är sidans egen kaka, i en session
+som alla sidblock delar.
+
+Två saker följer av det, och båda är värda att veta:
+
+**En kopia av en inloggad sida innehåller det du var inloggad för.** Bilden visar det som
+syntes på skärmen. Helsidearkivet går längre: det bevarar sidan exakt, alltså även dolda
+fält och sådant sidan bär med sig om vem du är. Därför skapas arkivet bara när du ber om
+det, och därför ska du tänka efter innan du skickar en arkivfil vidare.
+
+**Du kan logga ut från allt.** Knappen **Logga ut…** i huvudet rensar kakor och sparat
+sessionstillstånd för alla sidor du varit inloggad på. Dina anteckningar och sparade
+kopior påverkas inte.
+
 ## Var dina saker ligger
 
-Dokument och sparade sidkopior ligger på din egen disk:
+Dokument och sparade sidkopior ligger på din egen disk, i filer bara ditt konto kan
+läsa:
 
 | System | Plats |
 |---|---|
 | macOS | `~/Library/Application Support/TabFlow/tabflow` |
 | Linux | `~/.config/TabFlow/tabflow` |
 
-Vill du säkerhetskopiera eller flytta till en annan dator är det den mappen som
-gäller. Inloggningar du gör i sidblock sparas separat och följer inte med.
+Vill du säkerhetskopiera eller flytta till en annan dator är det den mappen som gäller.
+Inloggningar ligger separat, under `Partitions/tabflow-guest` i samma katalog, och följer
+inte med.
 
 ---
 

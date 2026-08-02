@@ -119,6 +119,52 @@ body {
   border-radius: 6px; padding: 3px 10px; font-size: 12px; cursor: pointer;
 }
 
+/* Knappar i huvudet vid sidan av lägesväxlaren */
+.header-action {
+  background: var(--panel-2); color: var(--muted); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 12px; font-size: 12px; cursor: pointer; white-space: nowrap;
+}
+.header-action:hover { color: var(--text); }
+
+/* Panelrad under huvudet. Ligger i flödet, aldrig som överlägg — inget DOM kan
+   ritas ovanpå en native sidvy (Spike E1). */
+.tool-panel {
+  display: flex; align-items: flex-start; gap: 24px;
+  padding: 14px 16px; background: var(--panel); border-bottom: 1px solid var(--border);
+}
+.tool-panel-main { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.tool-panel h2 { margin: 0; font-size: 13px; letter-spacing: .3px; text-transform: uppercase; color: var(--muted); }
+.tool-panel p { margin: 0; font-size: 13px; }
+.tool-panel label { display: flex; align-items: baseline; gap: 8px; font-size: 13px; flex-wrap: wrap; }
+.tool-panel .hint { color: var(--muted); font-size: 12px; flex-basis: 100%; padding-left: 22px; }
+.tool-panel progress { width: 100%; max-width: 420px; height: 6px; }
+.tool-panel-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+.tool-panel-actions button {
+  background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 5px 14px; font-size: 12px; cursor: pointer;
+}
+.tool-panel-actions button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tool-panel-actions button.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.tool-panel-actions button[disabled] { opacity: .45; cursor: not-allowed; }
+
+/* Val av snapshot-typ. Samma skäl som ovan: en rad i flödet, inte en popover. */
+.snap-menu {
+  display: flex; align-items: stretch; gap: 8px; padding: 8px 12px;
+  background: var(--panel-2); border-top: 1px solid var(--border);
+}
+.snap-menu > button {
+  flex: 1; text-align: left; display: flex; flex-direction: column; gap: 3px;
+  background: var(--panel); color: var(--text); border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 12px; cursor: pointer;
+}
+.snap-menu > button:hover { border-color: var(--accent); }
+.snap-menu strong { font-size: 12px; font-weight: 600; }
+.snap-menu span { font-size: 11px; color: var(--muted); }
+.snap-menu .snap-menu-close {
+  flex: 0 0 auto; align-self: flex-start; background: none; border: 0;
+  color: var(--muted); cursor: pointer; padding: 4px 6px;
+}
+
 /* Felmeddelande på ett block (t.ex. misslyckad fångst) */
 .block-error {
   display: flex; align-items: center; gap: 10px; font-size: 12px;

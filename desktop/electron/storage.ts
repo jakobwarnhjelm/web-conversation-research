@@ -41,9 +41,22 @@ const blobDir = () => path.join(root(), "blobs");
 const docDir = () => path.join(root(), "documents");
 const indexFile = () => path.join(root(), "documents", "index.json");
 
+/**
+ * Rättigheter: fångat innehåll kommer från inloggade sidor och kan innehålla
+ * namn, adresser och sessionstoken. Det har inget på ett delat konto att göra,
+ * så kataloger är 0700 och filer 0600.
+ */
+export const DIR_MODE = 0o700;
+export const FILE_MODE = 0o600;
+
 export async function initStorage(): Promise<void> {
-  await fs.mkdir(blobDir(), { recursive: true });
-  await fs.mkdir(docDir(), { recursive: true });
+  await fs.mkdir(blobDir(), { recursive: true, mode: DIR_MODE });
+  await fs.mkdir(docDir(), { recursive: true, mode: DIR_MODE });
+  // mkdir sätter bara rättigheter på kataloger den skapar; en installation från
+  // före den här ändringen har kvar 0755.
+  await fs.chmod(root(), DIR_MODE).catch(() => {});
+  await fs.chmod(blobDir(), DIR_MODE).catch(() => {});
+  await fs.chmod(docDir(), DIR_MODE).catch(() => {});
 }
 
 // --- Blobbar ---------------------------------------------------------------
@@ -73,7 +86,7 @@ export function reserveBlobRef(mime: string): { ref: string; path: string } {
 export async function putBlob(bytes: Uint8Array, mime: string): Promise<string> {
   const ext = EXT_BY_MIME[mime] ?? "bin";
   const ref = `${randomUUID()}.${ext}`;
-  await fs.writeFile(blobPath(ref), bytes);
+  await fs.writeFile(blobPath(ref), bytes, { mode: FILE_MODE });
   return ref;
 }
 
@@ -116,15 +129,21 @@ export async function loadDocument(id: string): Promise<string | null> {
 
 /** Tar dokumentet som redan serialiserad JSON — domänens `toJSON` äger formatet. */
 export async function saveDocument(summary: DocumentSummary, json: string): Promise<void> {
-  await fs.writeFile(docPath(summary.id), json, "utf8");
+  await fs.writeFile(docPath(summary.id), json, { encoding: "utf8", mode: FILE_MODE });
   const index = (await listDocuments()).filter((d) => d.id !== summary.id);
   index.push(summary);
   index.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
-  await fs.writeFile(indexFile(), JSON.stringify(index, null, 2), "utf8");
+  await fs.writeFile(indexFile(), JSON.stringify(index, null, 2), {
+    encoding: "utf8",
+    mode: FILE_MODE,
+  });
 }
 
 export async function deleteDocument(id: string): Promise<void> {
   await fs.rm(docPath(id), { force: true });
   const index = (await listDocuments()).filter((d) => d.id !== id);
-  await fs.writeFile(indexFile(), JSON.stringify(index, null, 2), "utf8");
+  await fs.writeFile(indexFile(), JSON.stringify(index, null, 2), {
+    encoding: "utf8",
+    mode: FILE_MODE,
+  });
 }

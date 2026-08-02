@@ -93,28 +93,74 @@ Ingen flik behöver bli aktiv, inget flimmer, ingen host-behörighet. Det som bl
 batch-snapshot i Spår A är helt enkelt inte ett problem i Electron, vilket gör
 F-SNAPWF byggbart här utan ny spike.
 
-Varje fångst ger **tre** artefakter:
+Varje fångst ger två artefakter, plus en tredje på begäran:
 
-| Artefakt | Vad det är | Var |
-|---|---|---|
-| PNG | grafisk kopia av sidan | `imageRef` |
-| Text-HTML | avskalad läsversion, ingen stil eller skript | `textHtmlRef` |
-| MHTML | **hela sidan** med HTML, CSS, bilder och typsnitt i en fil | `singleFileRef` |
+| Artefakt | Vad det är | Var | När |
+|---|---|---|---|
+| PNG | grafisk kopia av sidan | `imageRef` | alltid |
+| Text-HTML | avskalad läsversion, ingen stil eller skript | `textHtmlRef` | alltid |
+| MHTML | **hela sidan** med HTML, CSS, bilder och typsnitt i en fil | `singleFileRef` | `archive: true` |
 
 MHTML-arkivet (F-SNAP-9) är Chromiums egen serialisering via `webContents.savePage()`
 — samma idé som SingleFile, men inbyggd. Det är den enda artefakten som bevarar sidan
-som den faktiskt såg ut; text-HTML:en är läsbar men avskalad.
+som den faktiskt såg ut, och just därför också den som bevarar mest av en inloggad
+session. Se policyn för autentiseringsuppgifter nedan.
 
-Alla tre nås från remsan längst ned i ett snapshot-block: **Visa textversion**,
-**Öppna arkiv (hela sidan)** och **Visa i Finder**. Filerna ligger i
-`~/Library/Application Support/@tabflow/desktop/tabflow/blobs`.
+Artefakterna nås från remsan längst ned i ett snapshot-block: **Visa textversion**,
+**Öppna arkiv (hela sidan)** när ett arkiv finns, och **Visa i Finder**. Filerna ligger i
+`~/Library/Application Support/TabFlow/tabflow/blobs`.
+
+### Fånga alla (F-SNAPWF)
+
+`SnapshotService` i `app/src/ports/index.ts` fångar en URL **utan** monterat block —
+nödvändigt eftersom flödet är virtualiserat och handtag bara finns för det som är i vy.
+`IpcSnapshotService` implementerar den; `CaptureAllPanel` kör två arbetare mot den, och
+`withCaptureSlot` i `electron/capture.ts` håller samma tak i main så att en lång
+anteckning inte startar ett dolt fönster per sida samtidigt.
 
 ## Säkerhet (avsnitt 9)
 
 Främmande innehåll kör i en egen persistent session (`persist:tabflow-guest`) med
-`contextIsolation`, `sandbox` och utan `nodeIntegration`. Popup-försök nekas och
-skickas till systemets webbläsare. UA:n städas från "Electron" så sidor inte serverar
-"webbläsaren stöds inte".
+`contextIsolation`, `sandbox` och utan `nodeIntegration`. **Ingen preload är kopplad till
+gästvyer**, så en inbäddad sida kan aldrig nå `window.tabflow`. Popup-försök nekas och
+skickas till systemets webbläsare — även från det dolda fönster fångsten använder. UA:n
+städas från "Electron" så sidor inte serverar "webbläsaren stöds inte".
+
+`hardenGuestSession()` i `electron/guest.ts` **nekar alla behörighetsförfrågningar**.
+Utan den beviljar Electron det mesta som en sida ber om, och en anteckningsbok behöver
+varken kamera, mikrofon, position, notiser eller urklipp — allra minst i en vy
+användaren inte tittar på.
+
+Renderaren laddar dev-servern endast när `!app.isPackaged`. Den bär hela bryggan, så en
+miljövariabel får inte kunna styra in fjärrkod i den i ett installerat bygge.
+
+## Autentiseringsuppgifter — policyn
+
+**Appen rör aldrig ett lösenord.** Electron har ingen lösenordshanterare; Chromes är en
+del av Chrome, inte av rendermotorn. En `WebContentsView` får därför varken spara-fråga
+eller autofyll, och det ska den inte få. All inloggning sker mellan användaren och
+sajten, och det som blir kvar är sajtens egen kaka i gästsessionen — krypterad av
+Chromium mot OS-nyckelringen.
+
+Två konsekvenser att känna till:
+
+- **macOS:** nyckelringens åtkomst är bunden till kodsignaturen, och vår ad-hoc-signatur
+  ändras vid varje bygge. Användare kan därför få nyckelringsdialoger eller bli utloggade
+  efter en uppdatering. Det försvinner först med ett riktigt Developer ID.
+- **Linux:** utan gnome-keyring eller kwallet faller Chromium tillbaka på en hårdkodad
+  nyckel, och kakorna är i praktiken oskyddade.
+
+Ska appen någonsin lagra en egen hemlighet — en API-nyckel, en synk-token — är svaret
+`safeStorage.encryptString`, aldrig en fil i klartext.
+
+Fångat innehåll är den verkliga exponeringen, inte lösenordsfälten. Textextraktionen
+kastar `form`, `input` och `textarea`, men bilden visar allt som syns och **MHTML-arkivet
+bevarar hela den inloggade DOM:en** med dolda fält och inbäddad JSON om användaren.
+Därför är arkivet opt-in (`CaptureOptions.archive`), och därför skrivs allt fångat med
+`0600` i kataloger med `0700` — se `FILE_MODE` och `DIR_MODE` i `electron/storage.ts`.
+
+`clearGuestSession()` rensar kakor, lagring och cache. Utan den vägen skulle appen tyst
+samla på sig sessioner för varje sajt användaren tittat på, utan att ens nämna det.
 
 ## Verifierat
 

@@ -10,10 +10,20 @@
  * Här slipper Spår B det som stoppar Spår A: ingen flik behöver bli aktiv, inget
  * flimmer, ingen host-behörighet. Dödsstöt 2 finns helt enkelt inte i Electron.
  */
-import { BrowserWindow, WebContents, WebContentsView } from "electron";
+import { BrowserWindow, WebContents, WebContentsView, shell } from "electron";
+import fs from "node:fs/promises";
 import { GRAB_READABLE_EXPR } from "./readable";
 import { GUEST_PARTITION, GUEST_USER_AGENT } from "./guest";
-import { putBlob, reserveBlobRef } from "./storage";
+import { FILE_MODE, putBlob, reserveBlobRef } from "./storage";
+
+export interface CaptureOptions {
+  /**
+   * Skapa ett MHTML-arkiv av hela sidan. Av som förval: arkivet bevarar sidan
+   * exakt, alltså även dolda fält, inbäddad JSON om den inloggade användaren och
+   * resurser hämtade med sessionens kakor. Det ska vara ett uttryckligt val.
+   */
+  archive?: boolean;
+}
 
 export interface CaptureResult {
   imageRef: string;
@@ -31,6 +41,28 @@ const CAPTURE_MIN_HEIGHT = 800;
 const CAPTURE_MAX_HEIGHT = 8000;
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Varje fångst av en sida som inte är öppen kostar ett helt dolt fönster med en
+ * egen renderprocess. "Fånga alla" över en lång anteckning skulle utan tak starta
+ * dem allihop samtidigt, så fångsterna får köa.
+ */
+const MAX_PARALLEL_CAPTURES = 2;
+let activeCaptures = 0;
+const waitingForSlot: Array<() => void> = [];
+
+async function withCaptureSlot<T>(fn: () => Promise<T>): Promise<T> {
+  while (activeCaptures >= MAX_PARALLEL_CAPTURES) {
+    await new Promise<void>((resolve) => waitingForSlot.push(resolve));
+  }
+  activeCaptures++;
+  try {
+    return await fn();
+  } finally {
+    activeCaptures--;
+    waitingForSlot.shift()?.();
+  }
+}
 
 interface Extracted {
   title: string;
@@ -63,6 +95,8 @@ async function archive(wc: WebContents): Promise<string | null> {
   try {
     const { ref, path } = reserveBlobRef("multipart/related");
     await wc.savePage(path, "MHTML");
+    // Chromium skriver filen själv och tar ingen mode-parameter.
+    await fs.chmod(path, FILE_MODE);
     return ref;
   } catch (e) {
     console.error("[tabflow] MHTML-arkivering misslyckades", (e as Error).message);
@@ -89,16 +123,29 @@ async function store(
 }
 
 /** Fånga en vy som redan visas i flödet. */
-export async function captureLiveView(view: WebContentsView, url: string): Promise<CaptureResult> {
+export async function captureLiveView(
+  view: WebContentsView,
+  url: string,
+  options: CaptureOptions = {},
+): Promise<CaptureResult> {
   const wc = view.webContents;
   const image = await wc.capturePage();
-  const ex = await extract(wc, url);
-  const single = await archive(wc);
+  // Sidan kan ha navigerat vidare sedan blocket skapades. Artefakten ska bära
+  // den adress som faktiskt fångades, inte den vi en gång bad om.
+  const ex = await extract(wc, wc.getURL() || url);
+  const single = options.archive ? await archive(wc) : null;
   return await store(image.toPNG(), ex, single, false);
 }
 
 /** Ladda en URL i ett dolt fönster och fånga hela sidhöjden. */
-export async function captureUrlOffscreen(url: string): Promise<CaptureResult> {
+export function captureUrlOffscreen(
+  url: string,
+  options: CaptureOptions = {},
+): Promise<CaptureResult> {
+  return withCaptureSlot(() => captureUrlNow(url, options));
+}
+
+async function captureUrlNow(url: string, options: CaptureOptions): Promise<CaptureResult> {
   const win = new BrowserWindow({
     show: false,
     width: CAPTURE_WIDTH,
@@ -108,12 +155,19 @@ export async function captureUrlOffscreen(url: string): Promise<CaptureResult> {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      webSecurity: true,
       backgroundThrottling: false,
     },
   });
 
   try {
     win.webContents.setUserAgent(GUEST_USER_AGENT);
+    // Samma regel som för de synliga vyerna: en fångad sida får aldrig öppna
+    // fönster i appen. Extra viktigt här, där användaren inte ser något.
+    win.webContents.setWindowOpenHandler(({ url: target }) => {
+      if (/^https?:/i.test(target)) void shell.openExternal(target);
+      return { action: "deny" };
+    });
     await win.loadURL(url);
     await delay(600); // låt webbtypsnitt, bilder och sen layout landa
 
@@ -130,8 +184,8 @@ export async function captureUrlOffscreen(url: string): Promise<CaptureResult> {
     await delay(400); // omlayout efter storleksändringen
 
     const image = await win.webContents.capturePage();
-    const ex = await extract(win.webContents, url);
-    const single = await archive(win.webContents);
+    const ex = await extract(win.webContents, win.webContents.getURL() || url);
+    const single = options.archive ? await archive(win.webContents) : null;
     return await store(image.toPNG(), ex, single, fullPage);
   } finally {
     if (!win.isDestroyed()) win.destroy();

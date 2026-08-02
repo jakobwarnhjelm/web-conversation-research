@@ -1,5 +1,12 @@
 import type { FlowDocument } from "@tabflow/domain";
-import type { BlobStore, DocumentStore, SidblockRenderer, TabController } from "./ports";
+import type {
+  BlobStore,
+  DocumentStore,
+  GuestSessionController,
+  SidblockRenderer,
+  SnapshotService,
+  TabController,
+} from "./ports";
 
 /**
  * Allt spårspecifikt samlat på ett ställe. `App` tar en `AppRuntime` och känner
@@ -18,4 +25,8 @@ export interface AppRuntime {
   defaultPageMode?: "live" | "snapshot";
   /** Dokument att skapa när lagringen är tom. Låter varje spår välja sitt startinnehåll. */
   seedDocument?: () => FlowDocument;
+  /** Finns bara i spår som kan fånga en URL utan att blocket är monterat. */
+  snapshots?: SnapshotService;
+  /** Finns bara i spår med en egen, beständig session för inbäddade sidor. */
+  guestSession?: GuestSessionController;
 }
